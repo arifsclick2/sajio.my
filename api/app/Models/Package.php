@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'slug',
     'description',
     'price_monthly',
+    'stripe_price_id',
     'is_active',
     'sort_order',
 ])]

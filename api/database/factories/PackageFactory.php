@@ -33,6 +33,16 @@ class PackageFactory extends Factory
     }
 
     /**
+     * Attach a Stripe price ID (as if synced to Stripe).
+     */
+    public function withStripePrice(string $priceId = 'price_test_sajio'): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'stripe_price_id' => $priceId,
+        ]);
+    }
+
+    /**
      * Attach default limits.
      */
     public function withLimits(array $overrides = []): static

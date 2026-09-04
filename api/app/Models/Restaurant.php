@@ -3,11 +3,15 @@
 namespace App\Models;
 
 use App\Enums\RestaurantStatus;
+use App\Enums\SubscriptionStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
+use Laravel\Cashier\Billable;
 
 #[Fillable([
     'name',
@@ -17,10 +21,13 @@ use Illuminate\Support\Carbon;
     'country',
     'status',
     'trial_ends_at',
+    'stripe_id',
+    'pm_type',
+    'pm_last_four',
 ])]
 class Restaurant extends Model
 {
-    use HasFactory;
+    use Billable, HasFactory;
 
     protected function casts(): array
     {
@@ -47,6 +54,90 @@ class Restaurant extends Model
     public function subscriptionEvents(): HasMany
     {
         return $this->hasMany(SubscriptionEvent::class);
+    }
+
+    public function activeSubscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class)
+            ->whereIn('stripe_status', ['trialing', 'active', 'past_due'])
+            ->latestOfMany();
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Billing / subscription status                                      */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * Effective subscription state of this restaurant (plan §4):
+     *   - active Stripe sub  -> ACTIVE
+     *   - past_due Stripe    -> PAST_DUE
+     *   - cancelled/ended    -> CANCELLED / EXPIRED
+     *   - otherwise on trial -> TRIAL
+     *   - suspended status   -> SUSPENDED (super-admin)
+     */
+    public function subscriptionStatus(): SubscriptionStatus
+    {
+        if ($this->status === RestaurantStatus::Suspended) {
+            return SubscriptionStatus::Suspended;
+        }
+
+        $sub = $this->activeSubscription;
+
+        if ($sub) {
+            return match ($sub->stripe_status) {
+                'active', 'trialing' => SubscriptionStatus::Active,
+                'past_due' => SubscriptionStatus::PastDue,
+                'cancelled' => SubscriptionStatus::Cancelled,
+                default => SubscriptionStatus::Expired,
+            };
+        }
+
+        // No paid subscription yet.
+        if ($this->trialEnded()) {
+            return SubscriptionStatus::Expired;
+        }
+
+        if ($this->isOnTrial()) {
+            return SubscriptionStatus::Trial;
+        }
+
+        // Owner registered but hasn't verified email (no trial started yet).
+        return SubscriptionStatus::Trial;
+    }
+
+    /**
+     * Can this restaurant create orders / sell right now?
+     */
+    public function canOperate(): bool
+    {
+        return $this->subscriptionStatus()->canOperate();
+    }
+
+    /**
+     * The restaurant is forced to subscribe (trial over, no active plan).
+     */
+    public function needsSubscription(): bool
+    {
+        return in_array($this->subscriptionStatus(), [
+            SubscriptionStatus::Expired,
+            SubscriptionStatus::Suspended,
+        ], true);
+    }
+
+    public function isSubscribed(): bool
+    {
+        return $this->subscriptionStatus() === SubscriptionStatus::Active;
+    }
+
+    public function currentPackage(): ?Package
+    {
+        $sub = $this->activeSubscription;
+
+        if (! $sub || ! $sub->stripe_price) {
+            return null;
+        }
+
+        return Package::where('stripe_price_id', $sub->stripe_price)->first();
     }
 
     /* ------------------------------------------------------------------ */
@@ -84,5 +175,29 @@ class Restaurant extends Model
     public function startTrial(int $days = 14): void
     {
         $this->forceFill(['trial_ends_at' => now()->addDays($days)])->save();
+    }
+
+    /**
+     * Trial over and no subscription — set status to EXPIRED via event log.
+     */
+    public function markTrialExpired(): void
+    {
+        SubscriptionEvent::create([
+            'restaurant_id' => $this->id,
+            'from_status' => SubscriptionStatus::Trial,
+            'to_status' => SubscriptionStatus::Expired,
+            'reason' => 'trial_expired',
+        ]);
+    }
+
+    /**
+     * The package is stored on the restaurant once subscribed.
+     * (We resolve it via the active subscription's Stripe price.)
+     */
+    protected function package(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->currentPackage(),
+        );
     }
 }
