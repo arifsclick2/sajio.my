@@ -158,6 +158,32 @@ class OrderService
         ]);
     }
 
+    /**
+     * Mark an order as paid/complete (payment flow, §17-18). Skips already
+     * completed orders; refuses cancelled/voided ones. The transition is
+     * logged with its real `from` status so the audit trail stays truthful
+     * even when a bill is settled before the kitchen finished the order.
+     */
+    public function markPaid(Order $order, User $user, string $reason): Order
+    {
+        if (in_array($order->status, [OrderStatus::Cancelled, OrderStatus::Voided], true)) {
+            throw ValidationException::withMessages([
+                'order' => ['A cancelled or voided order cannot be marked as paid.'],
+            ]);
+        }
+
+        if ($order->status !== OrderStatus::Completed) {
+            $from = $order->status;
+            $order->update([
+                'status' => OrderStatus::Completed,
+                'completed_at' => now(),
+            ]);
+            $this->logStatus($order, $from, OrderStatus::Completed, $user, $reason);
+        }
+
+        return $order->fresh();
+    }
+
     /* ------------------------------------------------------------------ */
     /*  Internals                                                          */
     /* ------------------------------------------------------------------ */

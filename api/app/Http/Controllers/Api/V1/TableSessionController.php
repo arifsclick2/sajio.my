@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Enums\PaymentMethod;
+use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Restaurant;
 use App\Models\RestaurantTable;
 use App\Models\TableSession;
+use App\Services\PaymentService;
 use App\Services\TableSessionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +22,7 @@ class TableSessionController extends Controller
 {
     public function __construct(
         private readonly TableSessionService $sessions,
+        private readonly PaymentService $payments,
     ) {
     }
 
@@ -96,7 +101,8 @@ class TableSessionController extends Controller
     }
 
     /**
-     * Close a session (payment recorded in Phase 4; amount sets the total).
+     * Settle a session's bill (§13): records the payment, completes the
+     * orders and closes the session — table becomes available.
      */
     public function close(Request $request, TableSession $session): JsonResponse
     {
@@ -107,12 +113,26 @@ class TableSessionController extends Controller
         }
 
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:0', 'max:10000000'],
+            'method' => ['sometimes', 'string', 'in:'.implode(',', array_map(fn (PaymentMethod $m) => $m->value, PaymentMethod::cases()))],
+            'amount' => ['sometimes', 'numeric', 'min:0', 'max:10000000'],
+            'reference' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'note' => ['sometimes', 'nullable', 'string', 'max:1000'],
         ]);
 
-        $closed = $this->sessions->closeSession($session, $request->user(), (float) $validated['amount']);
+        $result = $this->payments->settleSession(
+            $session,
+            $request->user(),
+            isset($validated['method']) ? PaymentMethod::from($validated['method']) : null,
+            isset($validated['amount']) ? (float) $validated['amount'] : null,
+            $validated['reference'] ?? null,
+            $validated['note'] ?? null,
+        );
 
-        return response()->json(['session' => $this->shape($closed)]);
+        return response()->json([
+            'session' => $this->shape($result['session']),
+            'payment' => $result['payment'] ? $this->shapePayment($result['payment']) : null,
+            'orders' => array_map(fn (Order $order) => $this->shapeOrder($order), $result['orders']),
+        ]);
     }
 
     /**
@@ -142,6 +162,40 @@ class TableSessionController extends Controller
             'opened_by' => $session->opened_by,
             'closed_by' => $session->closed_by,
             'total_amount' => $session->total_amount,
+        ];
+    }
+
+    private function shapePayment(Payment $payment): array
+    {
+        return [
+            'id' => $payment->id,
+            'order_id' => $payment->order_id,
+            'table_session_id' => $payment->table_session_id,
+            'method' => $payment->method->value,
+            'method_label' => $payment->method->label(),
+            'amount' => $payment->amount,
+            'reference' => $payment->reference,
+            'note' => $payment->note,
+            'received_by' => $payment->received_by,
+            'paid_at' => $payment->paid_at?->toISOString(),
+        ];
+    }
+
+    private function shapeOrder(Order $order): array
+    {
+        return [
+            'id' => $order->id,
+            'order_no' => $order->order_no,
+            'type' => $order->type->value,
+            'status' => $order->status->value,
+            'status_label' => $order->status->label(),
+            'table_id' => $order->table_id,
+            'table_session_id' => $order->table_session_id,
+            'subtotal' => $order->subtotal,
+            'discount' => $order->discount,
+            'tax' => $order->tax,
+            'total' => $order->total,
+            'completed_at' => $order->completed_at?->toISOString(),
         ];
     }
 }

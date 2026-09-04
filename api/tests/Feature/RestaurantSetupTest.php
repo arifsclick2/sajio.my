@@ -203,6 +203,17 @@ class RestaurantSetupTest extends TestCase
     {
         $r = $this->restaurant();
         $staff = User::factory()->restaurant($r)->role(\App\Enums\UserRole::Staff)->create();
+        // Payment/close is a duty-gated action: clock the cashier in first.
+        \App\Models\StaffProfile::query()->create([
+            'restaurant_id' => $r->id,
+            'user_id' => $staff->id,
+            'staff_code' => \App\Models\StaffProfile::nextStaffCode($r->id),
+            'is_active' => true,
+        ]);
+        app(\App\Services\AttendanceService::class)->clockIn(
+            $staff,
+            now: \Carbon\CarbonImmutable::parse('2026-09-04 10:00', 'UTC'),
+        );
         Sanctum::actingAs($staff);
 
         $table = RestaurantTable::query()->create([
@@ -222,10 +233,12 @@ class RestaurantSetupTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'sessions');
 
-        $this->postJson("/api/v1/sessions/{$session['id']}/close", ['amount' => 33.00])
+        // Empty session close: no billable orders -> no payment recorded.
+        $this->postJson("/api/v1/sessions/{$session['id']}/close", ['method' => 'cash'])
             ->assertOk()
             ->assertJsonPath('session.status', 'closed')
-            ->assertJsonPath('session.total_amount', '33.00');
+            ->assertJsonPath('session.total_amount', '0.00')
+            ->assertJsonPath('payment', null);
 
         $this->getJson('/api/v1/sessions/open-sessions')->assertOk()->assertJsonCount(0, 'sessions');
     }

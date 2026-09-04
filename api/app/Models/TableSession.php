@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'restaurant_id', 'table_id', 'opened_by', 'closed_by',
@@ -52,6 +53,16 @@ class TableSession extends Model
     public function scopeOpen(Builder $query): Builder
     {
         return $query->where('status', self::OPEN);
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
     }
 
     public function isOpen(): bool

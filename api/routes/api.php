@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\OrderController;
+use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RestaurantTableController;
 use App\Http\Controllers\Api\V1\TableSessionController;
@@ -75,6 +76,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/orders/{order}', [OrderController::class, 'show']);
         Route::post('/orders/{order}/status', [OrderController::class, 'updateStatus']);
         Route::get('/orders/table/{table}/current', [OrderController::class, 'forTable']);
+
+        // Payments (§17, record-only) — all restaurant roles
+        Route::post('/orders/{order}/pay', [PaymentController::class, 'payOrder']);
 
         // Menu + Tables (owner/manager)
         Route::middleware('role:owner,manager')->group(function (): void {

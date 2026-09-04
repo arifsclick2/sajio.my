@@ -113,6 +113,16 @@ class Restaurant extends Model
         return $this->hasMany(TableSession::class);
     }
 
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     public function activeSubscription(): HasOne
     {
         return $this->hasOne(Subscription::class)

@@ -64,6 +64,11 @@ class Order extends Model
         return $this->hasMany(OrderStatusHistory::class);
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     public function scopeForRestaurant(Builder $query, int $restaurantId): Builder
     {
         return $query->where('restaurant_id', $restaurantId);
