@@ -19,7 +19,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
     if (password !== passwordConfirmation) {
-      setError("Passwords do not match.");
+      setError("Kata laluan tidak sama. Sila cuba lagi.");
       return;
     }
     setLoading(true);
@@ -41,27 +41,26 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-16">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_-10%,rgba(99,102,241,0.15),transparent_60%)]" />
-      <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.03] p-8 shadow-2xl">
-        <Link href="/" className="mb-8 block text-center text-xl font-bold tracking-tight">
-          sajio<span className="text-indigo-400">.</span>
+    <main className="pattern-batik relative flex flex-1 items-center justify-center overflow-hidden px-4 py-16">
+      <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[40rem] -translate-x-1/2 rounded-full bg-gold-300/30 blur-3xl" />
+      <div className="relative w-full max-w-md rounded-3xl border border-stone-200 bg-white p-8 shadow-2xl shadow-brand-900/10">
+        <Link href="/" className="mb-7 block text-center text-xl font-extrabold tracking-tight text-ink">
+          <span className="mr-1.5 inline-grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-600 to-emerald-500 align-middle text-sm font-black text-white">
+            S
+          </span>
+          sajio<span className="text-brand-600">.</span>
         </Link>
-        <h1 className="text-center text-2xl font-bold">Create your restaurant</h1>
-        <p className="mt-2 text-center text-sm text-gray-400">
-          14-day free trial · No credit card required
-        </p>
+        <h1 className="text-center text-2xl font-black tracking-tight text-ink">Cipta restoran anda</h1>
+        <p className="mt-2 text-center text-sm text-stone-500">14 hari percuma · Tiada kad kredit diperlukan</p>
 
         {error && (
-          <p className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-            {error}
-          </p>
+          <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">{error}</p>
         )}
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <div>
-            <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-gray-300">
-              Restaurant or owner name
+            <label htmlFor="name" className="mb-1.5 block text-sm font-bold text-stone-700">
+              Nama restoran / pemilik
             </label>
             <input
               id="name"
@@ -70,12 +69,12 @@ export default function RegisterPage() {
               autoComplete="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 outline-none transition focus:border-indigo-500/60 focus:bg-white/[0.07]"
+              className="w-full rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm text-ink placeholder-stone-400 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
               placeholder="Kedai Kopi Sajio"
             />
           </div>
           <div>
-            <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-300">
+            <label htmlFor="email" className="mb-1.5 block text-sm font-bold text-stone-700">
               Email
             </label>
             <input
@@ -85,13 +84,13 @@ export default function RegisterPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 outline-none transition focus:border-indigo-500/60 focus:bg-white/[0.07]"
-              placeholder="you@restaurant.my"
+              className="w-full rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm text-ink placeholder-stone-400 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+              placeholder="anda@restoran.my"
             />
           </div>
           <div>
-            <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-gray-300">
-              Password
+            <label htmlFor="password" className="mb-1.5 block text-sm font-bold text-stone-700">
+              Kata laluan
             </label>
             <input
               id="password"
@@ -101,13 +100,13 @@ export default function RegisterPage() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 outline-none transition focus:border-indigo-500/60 focus:bg-white/[0.07]"
-              placeholder="At least 8 characters"
+              className="w-full rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm text-ink placeholder-stone-400 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
+              placeholder="Sekurang-kurangnya 8 aksara"
             />
           </div>
           <div>
-            <label htmlFor="password_confirmation" className="mb-1.5 block text-sm font-medium text-gray-300">
-              Confirm password
+            <label htmlFor="password_confirmation" className="mb-1.5 block text-sm font-bold text-stone-700">
+              Sahkan kata laluan
             </label>
             <input
               id="password_confirmation"
@@ -117,28 +116,27 @@ export default function RegisterPage() {
               minLength={8}
               value={passwordConfirmation}
               onChange={(e) => setPasswordConfirmation(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 outline-none transition focus:border-indigo-500/60 focus:bg-white/[0.07]"
+              className="w-full rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm text-ink placeholder-stone-400 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100"
               placeholder="••••••••"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-indigo-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-brand-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-brand-700/25 transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "Creating your account…" : "Start free trial"}
+            {loading ? "Mencipta akaun…" : "Mula 14 hari percuma"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs leading-relaxed text-gray-500">
-          By continuing you agree to Sajio&apos;s terms. The restaurant dashboard
-          onboarding (menu, tables, staff) opens in the next milestone.
+        <p className="mt-6 text-center text-xs leading-relaxed text-stone-400">
+          Onboarding restoran (menu, meja, staff) akan dibuka dalam fasa seterusnya.
         </p>
 
-        <p className="mt-6 text-center text-sm text-gray-400">
-          Already have an account?{" "}
-          <Link href="/login" className="font-medium text-indigo-400 transition hover:text-indigo-300">
-            Log in
+        <p className="mt-5 text-center text-sm text-stone-500">
+          Sudah ada akaun?{" "}
+          <Link href="/login" className="font-black text-brand-700 transition hover:text-brand-800">
+            Log masuk
           </Link>
         </p>
       </div>

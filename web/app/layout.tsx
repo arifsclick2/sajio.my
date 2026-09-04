@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 
@@ -14,12 +14,16 @@ export const metadata: Metadata = {
     template: "%s · Sajio",
   },
   description:
-    "The simple POS, ordering and table management platform for Malaysian restaurants, cafes and warungs. 14-day free trial, no credit card required.",
+    "The simple POS, ordering and table management platform for Malaysian restaurants, cafes and warungs. Jalankan restoran anda dengan lebih mudah — 14-day free trial, no credit card required.",
   openGraph: {
     type: "website",
     locale: "en_MY",
     siteName: "Sajio",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#faf6ee",
 };
 
 export default function RootLayout({

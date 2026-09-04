@@ -27,4 +27,4 @@ echo "==> Restarting sajio-web via PM2"
 pm2 startOrRestart ecosystem.config.cjs
 pm2 save --force
 
-echo "==> Done. Sajio web is running on 127.0.0.1:3000"
+echo "==> Done. Sajio web is running on 127.0.0.1:3100 (nginx → sajio.my)"
