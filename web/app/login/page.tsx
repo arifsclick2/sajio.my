@@ -16,8 +16,8 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const { token, user } = await api.login({ email, password });
-      saveSession(token, user);
+      const { token, user, restaurant } = await api.login({ email, password });
+      saveSession(token, user, restaurant);
       const app = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.sajio.my";
       // Cross-host redirect (sajio.my -> app.sajio.my) — router.push can't do this.
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination

@@ -298,14 +298,14 @@ export const api = {
   },
 
   login(data: { email: string; password: string }) {
-    return request<{ user: User; token: string }>("/api/v1/auth/login", {
+    return request<{ user: User; token: string; restaurant?: Restaurant | null }>("/api/v1/auth/login", {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
   me(token: string) {
-    return request<User>("/api/v1/auth/me", {
+    return request<{ user: User; restaurant?: Restaurant | null }>("/api/v1/auth/me", {
       headers: authHeaders(token),
     });
   },
@@ -363,13 +363,48 @@ export const api = {
     });
   },
 
-  /* ---- Profile & menu ---- */
+  /* ---- Profile & branding (§6) ---- */
 
   profile(token: string) {
-    return request<{ restaurant: Restaurant; settings: Record<string, unknown>; branding: Record<string, unknown> }>(
-      "/api/v1/profile",
-      { headers: authHeaders(token) },
-    );
+    return request<RestaurantProfileResponse>("/api/v1/profile", { headers: authHeaders(token) });
+  },
+
+  updateProfileSettings(
+    token: string,
+    data: {
+      name?: string;
+      phone?: string | null;
+      email?: string | null;
+      address?: string | null;
+      city?: string | null;
+      state?: string | null;
+      postcode?: string | null;
+      country?: string;
+      timezone?: string;
+      opening_hours?: Record<string, unknown> | null;
+    },
+  ) {
+    return request<{ restaurant: Restaurant; settings: ProfileSettings }>("/api/v1/profile/settings", {
+      method: "PUT",
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateProfileBranding(
+    token: string,
+    data: {
+      logo_url?: string | null;
+      brand_color?: string | null;
+      receipt_header?: string | null;
+      receipt_footer?: string | null;
+    },
+  ) {
+    return request<{ branding: ProfileBranding }>("/api/v1/profile/branding", {
+      method: "PUT",
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    });
   },
 
   categories(token: string) {
@@ -759,6 +794,54 @@ export interface PublicMenuResponse {
 export function publicOrderUrl(tableToken: string): string {
   const app = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.sajio.my";
   return `${app}/order/${encodeURIComponent(tableToken)}`;
+}
+
+/* ---- Branded per-restaurant links (§6/§15) ---- */
+
+/** The restaurant's own web root, e.g. https://valley.sajio.my */
+export function restaurantRootUrl(subdomain: string): string {
+  return `https://${subdomain}.sajio.my`;
+}
+
+/**
+ * Canonical ordering URL for a table. Uses the restaurant's own subdomain
+ * (their QR cards / printed menus carry their brand), falling back to the
+ * shared app host when no subdomain is known.
+ */
+export function restaurantOrderUrl(subdomain: string | null | undefined, tableToken: string): string {
+  if (subdomain) {
+    return `${restaurantRootUrl(subdomain)}/order/${encodeURIComponent(tableToken)}`;
+  }
+  return publicOrderUrl(tableToken);
+}
+
+/* ---- Profile & branding types (§6) ---- */
+
+export interface ProfileSettings {
+  id?: number;
+  restaurant_id?: number;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postcode?: string | null;
+  country?: string;
+  opening_hours?: unknown;
+}
+
+export interface ProfileBranding {
+  id?: number;
+  logo_url?: string | null;
+  brand_color?: string | null;
+  receipt_header?: string | null;
+  receipt_footer?: string | null;
+}
+
+export interface RestaurantProfileResponse {
+  restaurant: Restaurant & { subdomain: string; currency: string; timezone: string; country: string };
+  settings: ProfileSettings;
+  branding: ProfileBranding;
 }
 
 /* ---- Money & reports types (§19-21) ---- */

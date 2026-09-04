@@ -21,7 +21,15 @@ return [
 
     'allowed_origins' => explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,https://app.sajio.my,https://sajio.my,https://www.sajio.my')),
 
-    'allowed_origins_patterns' => [],
+    /*
+     * Every restaurant owns {subdomain}.sajio.my — ordering pages, QR links
+     * and (later) landing pages live there, so those origins must be allowed
+     * for the public menu/order API and dashboard API calls (§25 tenant via
+     * subdomain). Exact hosts above remain; this pattern covers the wildcard.
+     */
+    'allowed_origins_patterns' => [
+        '#^https://([a-z0-9-]+\.)?sajio\.my$#',
+    ],
 
     'allowed_headers' => ['*'],
 

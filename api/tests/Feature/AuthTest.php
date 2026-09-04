@@ -69,7 +69,8 @@ class AuthTest extends TestCase
 
         $this->getJson('/api/v1/auth/me')
             ->assertOk()
-            ->assertJsonPath('email', $user->email);
+            ->assertJsonPath('user.email', $user->email)
+            ->assertJsonPath('restaurant', null);
     }
 
     public function test_guest_cannot_fetch_profile(): void

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import AppShell, { useDashboard } from "../../../components/dashboard/AppShell";
 import { rm, timeOnly } from "../../../components/dashboard/money";
 import { printReceipt } from "../../../components/dashboard/printReceipt";
-import { api, BillResponse, publicOrderUrl, SessionInfo, TableInfo } from "../../../lib/api";
+import { api, BillResponse, restaurantOrderUrl, SessionInfo, TableInfo } from "../../../lib/api";
 import { getToken } from "../../../lib/session";
 
 const inputCls =
@@ -18,7 +18,7 @@ const METHODS = [
 ];
 
 function TablesPageContent() {
-  const { role } = useDashboard();
+  const { role, restaurant } = useDashboard();
   const token = getToken();
 
   const [tables, setTables] = useState<TableInfo[]>([]);
@@ -320,7 +320,7 @@ function TablesPageContent() {
               if (!qrToken) {
                 return <p className="mt-4 text-sm font-semibold text-stone-500">No QR token on this table yet.</p>;
               }
-              const url = publicOrderUrl(qrToken);
+              const url = restaurantOrderUrl(restaurant?.subdomain, qrToken);
               return (
                 <>
                   <a

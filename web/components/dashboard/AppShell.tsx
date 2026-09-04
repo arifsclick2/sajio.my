@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { api, BillingStatus, User } from "../../lib/api";
-import { clearSession, getStoredRestaurant, getStoredUser, getToken } from "../../lib/session";
+import { clearSession, getStoredRestaurant, getStoredUser, getToken, saveSession } from "../../lib/session";
 
 export type Role = "owner" | "manager" | "staff" | "super_admin" | undefined;
 
@@ -42,6 +42,7 @@ const NAV: { key: string; label: string; icon: string; href: string; roles?: Rol
   { key: "sales", label: "Sales", icon: "₨", href: "/dashboard/sales", roles: ["owner", "manager"] },
   { key: "reports", label: "Reports", icon: "📈", href: "/dashboard/reports", roles: ["owner", "manager"] },
   { key: "expenses", label: "Expenses", icon: "💸", href: "/dashboard/expenses", roles: ["owner", "manager"] },
+  { key: "settings", label: "Settings", icon: "⚙", href: "/dashboard/settings", roles: ["owner", "manager"] },
 ];
 
 function Logo({ light = false }: { light?: boolean }) {
@@ -57,7 +58,7 @@ export default function AppShell({ active, children }: { active: string; childre
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "ready">("loading");
   const [user, setUser] = useState<User | null>(getStoredUser());
-  const [restaurant] = useState(getStoredRestaurant());
+  const [restaurant, setRestaurant] = useState(getStoredRestaurant());
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [attendance, setAttendance] = useState<AttendanceChip | null>(null);
   const [clockMsg, setClockMsg] = useState<string | null>(null);
@@ -70,8 +71,14 @@ export default function AppShell({ active, children }: { active: string; childre
     }
     (async () => {
       try {
-        const me = await api.me(token);
+        const { user: me, restaurant: res } = await api.me(token);
         setUser(me);
+        // Persist restaurant (subdomain etc.) so older sessions self-heal —
+        // QR links + Settings read it from the shared session.
+        if (res) {
+          saveSession(token, me, res);
+          setRestaurant(res);
+        }
         if (me.role === "owner") {
           const b = await api.billingStatus(token);
           setBilling(b);

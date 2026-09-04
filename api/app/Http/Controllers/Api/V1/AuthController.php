@@ -63,15 +63,23 @@ class AuthController extends Controller
         return response()->json([
             'user' => $user,
             'token' => $user->createToken('auth')->plainTextToken,
+            // Restaurant context so the web app can persist subdomain etc. on login.
+            'restaurant' => $user->restaurant?->only(['id', 'name', 'subdomain', 'currency', 'timezone', 'trial_ends_at']),
         ]);
     }
 
     /**
-     * Return the authenticated user.
+     * Return the authenticated user + restaurant context so the web app can
+     * persist the subdomain (QR links / settings) even for older sessions.
      */
     public function me(Request $request): JsonResponse
     {
-        return response()->json($request->user());
+        $user = $request->user();
+
+        return response()->json([
+            'user' => $user,
+            'restaurant' => $user->restaurant?->only(['id', 'name', 'subdomain', 'currency', 'timezone', 'trial_ends_at']),
+        ]);
     }
 
     /**
