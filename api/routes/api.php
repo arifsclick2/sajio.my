@@ -86,19 +86,21 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/orders/{order}/receipt', [ReceiptController::class, 'orderReceipt']);
         Route::get('/sessions/{session}/receipt', [ReceiptController::class, 'sessionReceipt']);
 
-        // Menu + Tables (owner/manager)
+        // Read-only menu + tables — all restaurant roles (POS ordering, §16)
+        Route::get('/menu/categories', [MenuController::class, 'categories']);
+        Route::get('/menu/products', [MenuController::class, 'products']);
+        Route::get('/tables', [RestaurantTableController::class, 'index']);
+
+        // Menu + Tables management (owner/manager)
         Route::middleware('role:owner,manager')->group(function (): void {
-            Route::get('/menu/categories', [MenuController::class, 'categories']);
             Route::post('/menu/categories', [MenuController::class, 'storeCategory']);
             Route::put('/menu/categories/{category}', [MenuController::class, 'updateCategory']);
             Route::delete('/menu/categories/{category}', [MenuController::class, 'destroyCategory']);
 
-            Route::get('/menu/products', [MenuController::class, 'products']);
             Route::post('/menu/products', [MenuController::class, 'storeProduct']);
             Route::put('/menu/products/{product}', [MenuController::class, 'updateProduct']);
             Route::delete('/menu/products/{product}', [MenuController::class, 'destroyProduct']);
 
-            Route::get('/tables', [RestaurantTableController::class, 'index']);
             Route::post('/tables', [RestaurantTableController::class, 'store']);
             Route::post('/tables/bulk', [RestaurantTableController::class, 'bulkStore']);
             Route::put('/tables/{table}', [RestaurantTableController::class, 'update']);
