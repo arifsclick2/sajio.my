@@ -46,6 +46,27 @@ class TableSessionService
     }
 
     /**
+     * Open a session with no operator (customer QR ordering, §15).
+     * The cashier later identifies it by scanning the table.
+     */
+    public function openSessionAnonymous(RestaurantTable $table): TableSession
+    {
+        $open = $this->openForTable($table);
+
+        if ($open) {
+            return $open;
+        }
+
+        return TableSession::query()->create([
+            'restaurant_id' => $table->restaurant_id,
+            'table_id' => $table->id,
+            'opened_by' => null,
+            'status' => TableSession::OPEN,
+            'opened_at' => now(),
+        ]);
+    }
+
+    /**
      * Resolve a table from a scanned tag's public token (active tags only).
      */
     public function tableFromTagToken(string $token): ?RestaurantTable

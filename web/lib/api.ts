@@ -603,4 +603,59 @@ export const api = {
   sessionReceipt(token: string, sessionId: number) {
     return request<ReceiptResponse>(`/api/v1/sessions/${sessionId}/receipt`, { headers: authHeaders(token) });
   },
+
+  /* ---- Customer QR ordering (public — no auth, §15) ---- */
+
+  publicMenu(tableToken: string) {
+    return request<PublicMenuResponse>(`/api/v1/public/table/${encodeURIComponent(tableToken)}/menu`);
+  },
+
+  publicPlaceOrder(
+    tableToken: string,
+    data: {
+      items: { product_id: number; quantity: number; note?: string }[];
+      customer_name?: string;
+      customer_phone?: string;
+      note?: string;
+    },
+  ) {
+    return request<{ message: string; order: OrderInfo }>(`/api/v1/public/table/${encodeURIComponent(tableToken)}/orders`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
 };
+
+/* ---- Public customer-menu types (§15) ---- */
+
+export interface PublicMenuProduct {
+  id: number;
+  name: string;
+  description?: string | null;
+  price: string;
+  image_url?: string | null;
+}
+
+export interface PublicMenuCategory {
+  id: number;
+  name: string;
+  products: PublicMenuProduct[];
+}
+
+export interface PublicMenuResponse {
+  table: { id: number; number: string };
+  restaurant: {
+    id: number;
+    name: string;
+    subdomain: string;
+    brand_color?: string | null;
+    logo_url?: string | null;
+  };
+  currency: string;
+  categories: PublicMenuCategory[];
+}
+
+export function publicOrderUrl(tableToken: string): string {
+  const app = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.sajio.my";
+  return `${app}/order/${encodeURIComponent(tableToken)}`;
+}

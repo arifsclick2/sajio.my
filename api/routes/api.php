@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BillingController;
+use App\Http\Controllers\Api\V1\CustomerOrderController;
 use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PaymentController;
@@ -34,6 +35,11 @@ Route::prefix('v1')->group(function (): void {
 
     // Public package list for the pricing/billing page
     Route::get('/billing/packages', [BillingController::class, 'packages']);
+
+    // Customer QR ordering (§15) — public, no login. Resolved via table token.
+    Route::get('/public/table/{publicToken}/menu', [CustomerOrderController::class, 'menu']);
+    Route::post('/public/table/{publicToken}/orders', [CustomerOrderController::class, 'placeOrder'])
+        ->middleware('throttle:30,1');
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/auth/me', [AuthController::class, 'me']);

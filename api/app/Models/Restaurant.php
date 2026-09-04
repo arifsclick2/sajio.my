@@ -207,6 +207,27 @@ class Restaurant extends Model
         return Package::where('stripe_price_id', $sub->stripe_price)->first();
     }
 
+    /**
+     * Customer QR ordering (§15) — available on trial (all features) and on
+     * Premium/Pro plans. Basic does not include customer QR ordering.
+     * Locked / suspended restaurants are always excluded (canOperate covers).
+     */
+    public function customerQrEnabled(): bool
+    {
+        if (! $this->canOperate()) {
+            return false;
+        }
+
+        $package = $this->currentPackage();
+
+        // Not subscribed (e.g. trial) -> enabled.
+        if (! $package) {
+            return true;
+        }
+
+        return in_array($package->slug, ['premium', 'pro'], true);
+    }
+
     /* ------------------------------------------------------------------ */
     /*  Trial helpers                                                      */
     /* ------------------------------------------------------------------ */

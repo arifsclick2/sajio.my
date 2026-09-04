@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import AppShell, { useDashboard } from "../../../components/dashboard/AppShell";
 import { rm, timeOnly } from "../../../components/dashboard/money";
 import { printReceipt } from "../../../components/dashboard/printReceipt";
-import { api, BillResponse, SessionInfo, TableInfo } from "../../../lib/api";
+import { api, BillResponse, publicOrderUrl, SessionInfo, TableInfo } from "../../../lib/api";
 import { getToken } from "../../../lib/session";
 
 const inputCls =
@@ -34,6 +34,10 @@ function TablesPageContent() {
 
   // settle dialog
   const [settle, setSettle] = useState<null | { session: SessionInfo; bill: BillResponse | null; method: string; busy: boolean }>(null);
+
+  // QR / customer ordering dialog
+  const [qrTable, setQrTable] = useState<TableInfo | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -179,7 +183,7 @@ function TablesPageContent() {
         <form onSubmit={addTable} className="flex flex-wrap items-end gap-3 rounded-2xl border border-stone-200 bg-white p-4">
           <div>
             <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Table number / name</label>
-            <input required value={newNum} onChange={(e) => setNewNum(e.target.value)} className={inputCls} placeholder="cth: 5 atau Luar" autoFocus />
+            <input required value={newNum} onChange={(e) => setNewNum(e.target.value)} className={inputCls} placeholder="e.g. 5 or Patio" autoFocus />
           </div>
           <div className="flex gap-2">
             <button type="submit" className={btnPrimary}>Save</button>
@@ -222,7 +226,7 @@ function TablesPageContent() {
                     {open ? "Open" : "Free"}
                   </span>
                 </div>
-                <p className="mt-0.5 text-xs text-stone-400">{t.capacity ?? 2} tempat seats</p>
+                <p className="mt-0.5 text-xs text-stone-400">{t.capacity ?? 2} seats</p>
                 {open && session && (
                   <p className="mt-2 rounded-lg bg-stone-50 px-2 py-1 text-xs font-bold text-stone-600">
                     Session since {timeOnly(session.opened_at)}
@@ -234,8 +238,8 @@ function TablesPageContent() {
                       Bill & Pay
                     </button>
                   )}
-                  <button onClick={() => regenerate(t)} className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-bold text-stone-600 hover:border-rasa-300 hover:text-rasa-600">
-                    QR
+                  <button onClick={() => setQrTable(t)} className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-bold text-stone-600 hover:border-rasa-300 hover:text-rasa-600">
+                    QR 📱
                   </button>
                   <button onClick={() => removeTable(t)} className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-bold text-stone-600 hover:border-red-300 hover:text-red-600">
                     Delete
@@ -293,10 +297,82 @@ function TablesPageContent() {
                   ))}
                 </div>
                 <button onClick={confirmSettle} disabled={!settle.method || settle.busy} className={`${btnPrimary} mt-4 w-full py-3 text-base`}>
-                  {settle.busy ? "Menyelesaikan…" : "Confirm Payment & Close Session"}
+                  {settle.busy ? "Processing…" : "Confirm Payment & Close Session"}
                 </button>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* QR / customer ordering dialog */}
+      {qrTable && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-stone-900/50 p-4" onClick={() => setQrTable(null)}>
+          <div
+            className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-lg font-black text-ink">Table {qrTable.number} · QR ordering 📱</p>
+            <p className="mt-1 text-xs text-stone-500">Customers scan to open the menu and order from their phone.</p>
+
+            {(() => {
+              const qrToken = qrTable.public_token;
+              if (!qrToken) {
+                return <p className="mt-4 text-sm font-semibold text-stone-500">No QR token on this table yet.</p>;
+              }
+              const url = publicOrderUrl(qrToken);
+              return (
+                <>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mx-auto mt-4 block w-fit rounded-2xl border border-stone-200 bg-white p-2 shadow-sm transition hover:border-rasa-300"
+                  >
+                    {/* QR via public image service — no QR library installed */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(url)}`}
+                      alt={`QR code for table ${qrTable.number}`}
+                      width={220}
+                      height={220}
+                      className="h-44 w-44 rounded-xl"
+                    />
+                  </a>
+                  <button
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(url);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      } catch {
+                        /* clipboard may be blocked; the link is shown below */
+                      }
+                    }}
+                    className="mt-3 rounded-xl border border-rasa-200 bg-rasa-50 px-4 py-2 text-sm font-black text-rasa-600 transition hover:bg-rasa-100"
+                  >
+                    {copied ? "✓ Copied!" : "Copy order link"}
+                  </button>
+                  <p className="mt-2 break-all rounded-lg bg-stone-50 px-3 py-2 text-[11px] font-semibold text-stone-500">{url}</p>
+                  <button
+                    onClick={() => {
+                      void regenerate(qrTable);
+                      setQrTable(null);
+                    }}
+                    className="mt-3 text-xs font-bold text-stone-400 underline-offset-2 hover:text-rasa-600 hover:underline"
+                  >
+                    Regenerate token (old QR card stops working)
+                  </button>
+                </>
+              );
+            })()}
+
+            <button
+              onClick={() => setQrTable(null)}
+              className="mt-4 w-full rounded-xl border border-stone-200 py-2 text-sm font-black text-stone-600 hover:border-stone-300"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

@@ -120,6 +120,79 @@ class OrderService
     }
 
     /**
+     * Customer QR ordering (§15) — the guest sends the order from their own
+     * phone. No staff member: staff_id stays null and the duty gate does not
+     * apply. The order is linked to the table's (auto-opened) session so the
+     * cashier can settle it later.
+     */
+    public function createCustomerOrder(Restaurant $restaurant, RestaurantTable $table, array $payload): Order
+    {
+        if ($restaurant->needsSubscription() || ! $restaurant->canOperate()) {
+            throw ValidationException::withMessages([
+                'restaurant' => ['This restaurant is not accepting orders right now.'],
+            ]);
+        }
+
+        if (! $restaurant->customerQrEnabled()) {
+            throw ValidationException::withMessages([
+                'restaurant' => ['Customer QR ordering is not available on this plan.'],
+            ]);
+        }
+
+        $items = $this->resolveItems($restaurant, $payload['items']);
+        if (empty($items)) {
+            throw ValidationException::withMessages(['items' => ['Order must contain at least one item.']]);
+        }
+
+        $subtotal = round(array_sum(array_map(fn ($i) => $i['line_total'], $items)), 2);
+        $total = round($subtotal, 2);
+
+        return DB::transaction(function () use ($restaurant, $table, $payload, $items, $subtotal, $total): Order {
+            // Sequential human order number (same counter as POS orders).
+            $restaurant = Restaurant::query()->whereKey($restaurant->id)->lockForUpdate()->first();
+            $restaurant->increment('last_order_no');
+            $orderNo = '#'.(1000 + $restaurant->last_order_no);
+
+            // Reuse the table's open session or auto-open one anonymously.
+            $session = $this->sessions->openForTable($table)
+                ?? $this->sessions->openSessionAnonymous($table);
+
+            $order = Order::query()->create([
+                'restaurant_id' => $restaurant->id,
+                'table_id' => $table->id,
+                'table_session_id' => $session->id,
+                'staff_id' => null,
+                'order_no' => $orderNo,
+                'type' => OrderType::DineIn,
+                'status' => OrderStatus::New,
+                'source' => 'customer_qr',
+                'subtotal' => $subtotal,
+                'discount' => 0,
+                'tax' => 0,
+                'total' => $total,
+                'customer_name' => $payload['customer_name'] ?? null,
+                'customer_phone' => $payload['customer_phone'] ?? null,
+                'note' => $payload['note'] ?? null,
+            ]);
+
+            foreach ($items as $item) {
+                $order->items()->create([
+                    'product_id' => $item['product_id'],
+                    'name' => $item['name'],
+                    'unit_price' => $item['unit_price'],
+                    'quantity' => $item['quantity'],
+                    'line_total' => $item['line_total'],
+                    'note' => $item['note'] ?? null,
+                ]);
+            }
+
+            $this->logStatus($order, null, OrderStatus::New, null, 'customer_qr_order');
+
+            return $order->load(['items', 'table', 'tableSession']);
+        });
+    }
+
+    /**
      * Transition an order status along the allowed map; logs history.
      */
     public function transition(Order $order, User $user, OrderStatus $to, ?string $reason = null): Order
