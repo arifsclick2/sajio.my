@@ -5,6 +5,7 @@ import AppShell, { useDashboard } from "../../../components/dashboard/AppShell";
 import { rm, timeOnly } from "../../../components/dashboard/money";
 import { printReceipt } from "../../../components/dashboard/printReceipt";
 import { api, BillResponse, CategoryInfo, OrderInfo, ProductInfo, SessionInfo, TableInfo } from "../../../lib/api";
+import { getToken } from "../../../lib/session";
 
 const STATUS_LABEL: Record<string, string> = {
   new: "Baru",
@@ -53,7 +54,7 @@ interface PayDialog {
 
 function PosPageContent() {
   const { role, attendance, clockIn } = useDashboard();
-  const token = typeof window !== "undefined" ? window.localStorage.getItem("sajio_token") : null;
+  const token = getToken();
   const canManage = role === "owner" || role === "manager";
   const staffLabel = role === "manager" ? "Pengurus" : "Staff";
 

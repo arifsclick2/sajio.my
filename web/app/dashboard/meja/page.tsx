@@ -5,6 +5,7 @@ import AppShell, { useDashboard } from "../../../components/dashboard/AppShell";
 import { rm, timeOnly } from "../../../components/dashboard/money";
 import { printReceipt } from "../../../components/dashboard/printReceipt";
 import { api, BillResponse, SessionInfo, TableInfo } from "../../../lib/api";
+import { getToken } from "../../../lib/session";
 
 const inputCls =
   "rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100";
@@ -18,7 +19,7 @@ const METHODS = [
 
 function MejaPageContent() {
   const { role } = useDashboard();
-  const token = typeof window !== "undefined" ? window.localStorage.getItem("sajio_token") : null;
+  const token = getToken();
 
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);

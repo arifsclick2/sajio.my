@@ -3,6 +3,7 @@
 import { useState } from "react";
 import AppShell, { useDashboard } from "../../components/dashboard/AppShell";
 import { api } from "../../lib/api";
+import { getToken } from "../../lib/session";
 
 interface Pkg {
   id: number;
@@ -20,7 +21,7 @@ function HomeContent() {
   const [plansShown, setPlansShown] = useState(false);
   const [subMsg, setSubMsg] = useState<string | null>(null);
 
-  const token = typeof window !== "undefined" ? window.localStorage.getItem("sajio_token") : null;
+  const token = getToken();
 
   async function handleClock(action: "in" | "out") {
     if (!token) return;

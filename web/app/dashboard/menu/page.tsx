@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import AppShell, { useDashboard } from "../../../components/dashboard/AppShell";
 import { rm } from "../../../components/dashboard/money";
 import { api, CategoryInfo, ProductInfo } from "../../../lib/api";
+import { getToken } from "../../../lib/session";
 
 interface ModalProps {
   title: string;
@@ -28,7 +29,7 @@ const btnPrimary = "rounded-xl bg-brand-700 px-4 py-2 text-sm font-black text-wh
 
 function MenuPageContent() {
   const { role } = useDashboard();
-  const token = typeof window !== "undefined" ? window.localStorage.getItem("sajio_token") : null;
+  const token = getToken();
 
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [products, setProducts] = useState<ProductInfo[]>([]);
