@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -41,6 +42,20 @@ class User extends Authenticatable
     public function restaurant(): BelongsTo
     {
         return $this->belongsTo(Restaurant::class);
+    }
+
+    public function staffProfile(): HasOne
+    {
+        return $this->hasOne(StaffProfile::class);
+    }
+
+    /**
+     * Is this user a restaurant employee who must clock in to be on duty?
+     * Staff and managers yes; owners are exempt.
+     */
+    public function requiresAttendance(): bool
+    {
+        return $this->role === UserRole::Staff || $this->role === UserRole::Manager;
     }
 
     /* ------------------------------------------------------------------ */

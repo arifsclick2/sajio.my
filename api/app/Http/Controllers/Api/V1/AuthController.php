@@ -49,6 +49,17 @@ class AuthController extends Controller
             ]);
         }
 
+        // Staff/manager accounts must be active (owner can deactivate).
+        if ($user->requiresAttendance()) {
+            $profile = $user->staffProfile;
+
+            if (! $profile || ! $profile->is_active) {
+                return response()->json([
+                    'message' => 'This staff account is inactive. Please ask the restaurant owner.',
+                ], 403);
+            }
+        }
+
         return response()->json([
             'user' => $user,
             'token' => $user->createToken('auth')->plainTextToken,

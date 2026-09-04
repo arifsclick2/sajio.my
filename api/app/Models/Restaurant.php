@@ -62,6 +62,21 @@ class Restaurant extends Model
         return $this->hasMany(SubscriptionEvent::class);
     }
 
+    public function shifts(): HasMany
+    {
+        return $this->hasMany(Shift::class);
+    }
+
+    public function staffProfiles(): HasMany
+    {
+        return $this->hasMany(StaffProfile::class);
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
     public function activeSubscription(): HasOne
     {
         return $this->hasOne(Subscription::class)
