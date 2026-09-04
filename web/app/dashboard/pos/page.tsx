@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import AppShell, { useDashboard } from "../../../components/dashboard/AppShell";
 import { rm, timeOnly } from "../../../components/dashboard/money";
 import { printReceipt } from "../../../components/dashboard/printReceipt";
@@ -74,6 +74,8 @@ function PosPageContent() {
   const [toast, setToast] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [pay, setPay] = useState<PayDialog | null>(null);
+  const [q, setQ] = useState("");
+  const [cartOpen, setCartOpen] = useState(false);
 
   const onDuty = attendance ? attendance.on_duty : true; // owners exempt
 
@@ -189,6 +191,7 @@ function PosPageContent() {
       setCart([]);
       setDiscount("");
       setNote("");
+      setCartOpen(false);
       if (type === "dine_in") setTableSel(null);
       setTab("floor");
       await loadOrders();
@@ -264,6 +267,95 @@ function PosPageContent() {
 
   const filtered = statusFilter === "all" ? orders : orders.filter((o) => o.status === statusFilter);
   const shownCats = catSel ? products.filter((p) => p.category_id === catSel) : products;
+  const qtyOf = (id: number) => cart.find((l) => l.product.id === id)?.qty ?? 0;
+  const cartCount = cart.reduce((n, l) => n + l.qty, 0);
+  const pickingTable = type === "dine_in" && !tableSel;
+  const shownItems = shownCats
+    .filter((p) => p.name.toLowerCase().includes(q.trim().toLowerCase()))
+    .sort((a, b) => Number(b.available) - Number(a.available) || a.name.localeCompare(b.name));
+
+  /* Reusable cart body (desktop column + mobile sheet share it). */
+  const renderCartPanel = (withActions: boolean): ReactNode => (
+    <>
+      <div className="max-h-[46vh] space-y-2 overflow-y-auto pr-1 lg:max-h-72">
+        {cart.length === 0 && <p className="py-6 text-center text-sm text-stone-400">Tap + on a food to add it here.</p>}
+        {cart.map((l) => (
+          <div key={l.product.id} className="flex items-center gap-2 rounded-xl border border-stone-200 p-2">
+            {l.product.image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={l.product.image_url} alt="" className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-stone-100" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
+            ) : null}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-ink">{l.product.name}</p>
+              <p className="text-xs text-stone-500">{rm(Number(l.product.price) * l.qty)}</p>
+            </div>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setQty(l.product.id, l.qty - 1)} className="grid h-8 w-8 place-items-center rounded-lg border border-stone-200 text-base font-black text-stone-500 transition active:scale-90">
+                −
+              </button>
+              <span className="w-6 text-center text-base font-black text-ink">{l.qty}</span>
+              <button onClick={() => addToCart(l.product)} className="grid h-8 w-8 place-items-center rounded-lg bg-rasa-600 text-base font-black text-white transition active:scale-90">
+                +
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 flex items-center gap-2">
+        <span className="text-xs font-black uppercase tracking-wide text-stone-500">Discount (RM)</span>
+        <input
+          type="number"
+          min="0"
+          step="0.05"
+          value={discount}
+          onChange={(e) => setDiscount(e.target.value)}
+          placeholder="0.00"
+          className="w-24 rounded-lg border border-stone-300 px-2 py-1.5 text-right text-sm font-bold outline-none focus:border-rasa-500"
+        />
+      </div>
+      <input
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Order note (optional)…"
+        className="mt-2 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus:border-rasa-500"
+      />
+
+      <div className="mt-3 space-y-1 border-t border-stone-200 pt-3 text-sm">
+        <div className="flex justify-between text-stone-500">
+          <span>Subtotal</span>
+          <span className="font-bold">{rm(subtotal)}</span>
+        </div>
+        {discountVal > 0 && (
+          <div className="flex justify-between text-red-500">
+            <span>Discount</span>
+            <span className="font-bold">−{rm(discountVal)}</span>
+          </div>
+        )}
+        <div className="flex justify-between text-xl font-black text-ink">
+          <span>TOTAL</span>
+          <span>{rm(total)}</span>
+        </div>
+      </div>
+
+      {withActions && (
+        <>
+          <button
+            onClick={() => void sendOrder()}
+            disabled={sending || cart.length === 0 || !onDuty}
+            className="mt-3 w-full rounded-xl bg-rasa-600 py-3 text-sm font-black text-white shadow-lg shadow-rasa-600/25 transition hover:bg-rasa-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {sending ? "Sending…" : `Send Order · ${rm(total)}`}
+          </button>
+          {cart.length > 0 && (
+            <button onClick={() => setCart([])} className="mt-2 w-full rounded-xl border border-stone-200 py-2 text-xs font-bold text-stone-500 hover:border-red-200 hover:text-red-500">
+              Clear order
+            </button>
+          )}
+        </>
+      )}
+    </>
+  );
 
   return (
     <>
@@ -305,128 +397,182 @@ function PosPageContent() {
       )}
 
       {tab === "order" ? (
-        <div className="grid gap-5 xl:grid-cols-[1fr_360px]">
-          {/* Left: type + tables + products */}
+        <>
+          <div className="grid gap-5 pb-24 lg:grid-cols-[minmax(0,1fr)_330px] lg:items-start lg:pb-0">
+          {/* Left: flow */}
           <div className="min-w-0 space-y-4">
-            <div className="flex gap-2">
-              {(
-                [
-                  ["dine_in", "Dine-in"],
-                  ["takeaway", "Takeaway"],
-                ] as const
-              ).map(([v, label]) => (
-                <button
-                  key={v}
-                  onClick={() => {
-                    setType(v);
-                    if (v === "takeaway") setTableSel(null);
-                  }}
-                  className={`rounded-xl px-5 py-2.5 text-sm font-black transition ${
-                    type === v ? "bg-rasa-600 text-white shadow-md" : "border border-stone-200 bg-white text-stone-600 hover:border-rasa-300"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+            {/* Order type — big touch targets */}
+            <div className="grid grid-cols-2 gap-2 sm:max-w-md">
+              <button
+                onClick={() => setType("dine_in")}
+                className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-base font-black transition ${
+                  type === "dine_in" ? "bg-rasa-600 text-white shadow-lg shadow-rasa-600/25" : "border-2 border-stone-200 bg-white text-stone-600 hover:border-rasa-300"
+                }`}
+              >
+                🪑 Dine-in
+              </button>
+              <button
+                onClick={() => {
+                  setType("takeaway");
+                  setTableSel(null);
+                }}
+                className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-base font-black transition ${
+                  type === "takeaway" ? "bg-rasa-600 text-white shadow-lg shadow-rasa-600/25" : "border-2 border-stone-200 bg-white text-stone-600 hover:border-rasa-300"
+                }`}
+              >
+                🥡 Takeaway
+              </button>
             </div>
 
-            {type === "dine_in" && (
-              <div className="rounded-2xl border border-stone-200 bg-white p-4">
-                <p className="mb-2 text-xs font-black uppercase tracking-wide text-stone-500">Choose table</p>
-                <div className="flex flex-wrap gap-2">
+            {pickingTable && (
+              /* STEP 1 — pick a table, big tiles */
+              <div className="rounded-2xl border-2 border-rasa-100 bg-white p-4 sm:p-5">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-rasa-500 text-xs font-black text-white">1</span>
+                  <p className="text-lg font-black text-ink">Which table?</p>
+                  <p className="ml-auto hidden text-xs font-semibold text-stone-400 sm:block">
+                    <span className="text-emerald-400">●</span> free · <span className="text-rasa-400">●</span> occupied
+                  </p>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6">
                   {tables.map((t) => {
                     const occupied = sessionForTable.has(t.id);
-                    const active = tableSel?.id === t.id;
                     return (
                       <button
                         key={t.id}
-                        onClick={() => setTableSel(active ? null : t)}
-                        className={`rounded-xl border-2 px-4 py-2 text-sm font-black transition ${
-                          active
-                            ? "border-rasa-600 bg-rasa-600 text-white"
-                            : occupied
-                              ? "border-rasa-300 bg-rasa-50 text-rasa-700"
-                              : "border-stone-200 bg-white text-stone-700 hover:border-rasa-300"
+                        onClick={() => setTableSel(t)}
+                        className={`flex min-h-[84px] flex-col items-center justify-center rounded-2xl border-2 px-2 py-2 transition active:scale-95 ${
+                          occupied
+                            ? "border-rasa-300 bg-rasa-50 text-rasa-700"
+                            : "border-stone-200 bg-white text-stone-700 hover:border-rasa-400 hover:shadow-md"
                         }`}
                       >
-                        {t.number}
-                        {occupied && <span className="ml-1 text-[9px] font-bold opacity-70">●</span>}
+                        <span className="text-2xl font-black leading-none">{t.number}</span>
+                        <span className="mt-1 text-[10px] font-bold opacity-60">{t.capacity ?? 2} seats</span>
+                        <span className={`mt-1.5 h-1.5 w-6 rounded-full ${occupied ? "bg-rasa-400" : "bg-emerald-400"}`} />
                       </button>
                     );
                   })}
                   {tables.length === 0 && (
-                    <p className="text-sm text-stone-400">
+                    <p className="col-span-full py-6 text-center text-sm text-stone-400">
                       {canManage
                         ? "No tables yet — create some on the Tables page first."
                         : "No tables yet — your owner will set them up on the Tables page."}
                     </p>
                   )}
                 </div>
-                {type === "dine_in" && tables.length > 0 && (
-                  <p className="mt-2 text-[11px] font-semibold text-stone-400">Tap a table to select it · <span className="text-rasa-400">●</span> = has an open session (new orders join it)</p>
-                )}
-                {tableSel && (
-                  <p className="mt-2 text-xs font-bold text-rasa-600">
-                    Table {tableSel.number} selected{sessionForTable.has(tableSel.id) ? " (existing session — orders will be combined)" : ""}
-                  </p>
-                )}
               </div>
             )}
 
-            {/* Categories */}
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                onClick={() => setCatSel(null)}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-black transition ${catSel === null ? "bg-stone-800 text-white" : "border border-stone-200 bg-white text-stone-500 hover:border-stone-400"}`}
-              >
-                All
-              </button>
-              {cats.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setCatSel(catSel === c.id ? null : c.id)}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-black transition ${
-                    catSel === c.id ? "bg-stone-800 text-white" : "border border-stone-200 bg-white text-stone-500 hover:border-stone-400"
-                  }`}
-                >
-                  {c.name}
-                </button>
-              ))}
-            </div>
+            {!pickingTable && (
+              /* STEP 2 — add items: search + categories + compact food list */
+              <div className="space-y-3">
+                {type === "dine_in" && tableSel && (
+                  <button
+                    onClick={() => setTableSel(null)}
+                    className="flex w-full items-center justify-between rounded-2xl border-2 border-rasa-200 bg-rasa-50 px-4 py-3 text-left transition active:scale-[0.99]"
+                  >
+                    <span className="text-base font-black text-rasa-700">
+                      🪑 Table {tableSel.number}
+                      {sessionForTable.has(tableSel.id) ? " · joining open session" : ""}
+                    </span>
+                    <span className="text-xs font-black text-rasa-600 underline">Change</span>
+                  </button>
+                )}
 
-            {/* Products */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4">
-              {shownCats.map((p) => (
-                <button
-                  key={p.id}
-                  disabled={!p.available}
-                  onClick={() => addToCart(p)}
-                  className={`rounded-2xl border p-4 text-left transition ${
-                    p.available
-                      ? "border-stone-200 bg-white hover:-translate-y-0.5 hover:border-rasa-400 hover:shadow-md active:scale-[0.98]"
-                      : "cursor-not-allowed border-stone-200 bg-stone-100 opacity-60"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="line-clamp-2 text-sm font-black text-ink">{p.name}</p>
-                    <span className="shrink-0 text-[9px] font-black uppercase text-stone-300">+</span>
-                  </div>
-                  <p className="mt-1 text-sm font-black text-rasa-600">{rm(p.price)}</p>
-                  {!p.available && <p className="text-[10px] font-bold uppercase text-stone-400">Sold out</p>}
-                </button>
-              ))}
-              {shownCats.length === 0 && (
-                <p className="col-span-full py-8 text-center text-sm text-stone-400">
-                  {canManage
-                    ? "No products yet. Add some to the menu first."
-                    : "The menu is still empty — your owner will add products in Menu."}
-                </p>
-              )}
-            </div>
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-base text-stone-400">🔍</span>
+                  <input
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    placeholder="Search food…"
+                    className="w-full rounded-2xl border border-stone-300 bg-white py-2.5 pl-10 pr-3 text-sm font-semibold outline-none transition focus:border-rasa-500 focus:ring-4 focus:ring-rasa-100"
+                  />
+                  {q && (
+                    <button onClick={() => setQ("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-black text-stone-400 hover:text-rasa-600">
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Categories — horizontal scroll */}
+                <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+                  <button
+                    onClick={() => setCatSel(null)}
+                    className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-black transition ${
+                      catSel === null ? "bg-stone-800 text-white" : "border border-stone-200 bg-white text-stone-500"
+                    }`}
+                  >
+                    All
+                  </button>
+                  {cats.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => setCatSel(catSel === c.id ? null : c.id)}
+                      className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-black transition ${
+                        catSel === c.id ? "bg-stone-800 text-white" : "border border-stone-200 bg-white text-stone-500"
+                      }`}
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Compact product rows */}
+                <div className="divide-y divide-stone-100 overflow-hidden rounded-2xl border border-stone-200 bg-white">
+                  {shownItems.length === 0 && (
+                    <p className="py-8 text-center text-sm text-stone-400">
+                      {q
+                        ? "No food matches your search."
+                        : canManage
+                          ? "No products yet. Add some to the menu first."
+                          : "The menu is still empty — your owner will add products in Menu."}
+                    </p>
+                  )}
+                  {shownItems.map((p) => {
+                    const qty = qtyOf(p.id);
+                    return (
+                      <div key={p.id} className={`flex items-center gap-3 px-3 py-2 ${p.available ? "" : "opacity-50"}`}>
+                        {p.image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.image_url} alt={p.name} className="h-11 w-11 shrink-0 rounded-lg object-cover ring-1 ring-stone-100" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
+                        ) : (
+                          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-rasa-50 text-xl">🍽️</span>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-ink">{p.name}</p>
+                          <p className="text-xs font-black text-rasa-600">{rm(p.price)}</p>
+                        </div>
+                        {!p.available ? (
+                          <span className="shrink-0 text-[10px] font-black uppercase tracking-wide text-stone-400">Sold out</span>
+                        ) : qty === 0 ? (
+                          <button
+                            onClick={() => addToCart(p)}
+                            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-rasa-600 text-xl font-black text-white shadow-md shadow-rasa-600/25 transition active:scale-90"
+                          >
+                            +
+                          </button>
+                        ) : (
+                          <div className="flex shrink-0 items-center gap-0.5 rounded-xl bg-rasa-600 p-0.5 text-white">
+                            <button onClick={() => setQty(p.id, qty - 1)} className="grid h-9 w-9 place-items-center rounded-lg text-xl font-black active:scale-90">
+                              −
+                            </button>
+                            <span className="w-7 text-center text-base font-black">{qty}</span>
+                            <button onClick={() => addToCart(p)} className="grid h-9 w-9 place-items-center rounded-lg text-xl font-black active:scale-90">
+                              +
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Right: cart */}
-          <aside className="h-fit rounded-2xl border border-stone-200 bg-white p-4 xl:sticky xl:top-20">
+          {/* Right: cart (wide screens) */}
+          <aside className="hidden rounded-2xl border border-stone-200 bg-white p-4 lg:sticky lg:top-20 lg:block">
             <p className="font-black text-ink">
               {type === "dine_in"
                 ? tableSel
@@ -434,73 +580,62 @@ function PosPageContent() {
                   : "Order — pick a table"
                 : "Order — Takeaway"}
             </p>
-            <div className="mt-3 max-h-72 space-y-2 overflow-auto pr-1">
-              {cart.length === 0 && <p className="py-6 text-center text-sm text-stone-400">Click a product to add it to the order.</p>}
-              {cart.map((l) => (
-                <div key={l.product.id} className="flex items-center gap-2 rounded-xl border border-stone-200 p-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-ink">{l.product.name}</p>
-                    <p className="text-xs text-stone-500">{rm(Number(l.product.price) * l.qty)}</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => setQty(l.product.id, l.qty - 1)} className="grid h-6 w-6 place-items-center rounded-md border border-stone-200 text-sm font-black text-stone-500 hover:border-red-300 hover:text-red-500">
-                      −
-                    </button>
-                    <span className="w-6 text-center text-sm font-black text-ink">{l.qty}</span>
-                    <button onClick={() => setQty(l.product.id, l.qty + 1)} className="grid h-6 w-6 place-items-center rounded-md border border-stone-200 text-sm font-black text-stone-500 hover:border-rasa-300 hover:text-rasa-600">
-                      +
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-3 flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-wide text-stone-500">Discount (RM)</span>
-              <input
-                type="number"
-                min="0"
-                step="0.05"
-                value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
-                placeholder="0.00"
-                className="w-24 rounded-lg border border-stone-300 px-2 py-1 text-right text-sm font-bold outline-none focus:border-rasa-500"
-              />
-            </div>
-            <input
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Order note (optional)…"
-              className="mt-2 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus:border-rasa-500"
-            />
-
-            <div className="mt-3 space-y-1 border-t border-stone-200 pt-3 text-sm">
-              <div className="flex justify-between text-stone-500">
-                <span>Subtotal</span>
-                <span className="font-bold">{rm(subtotal)}</span>
-              </div>
-              {discountVal > 0 && (
-                <div className="flex justify-between text-red-500">
-                  <span>Discount</span>
-                  <span className="font-bold">−{rm(discountVal)}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-lg font-black text-ink">
-                <span>TOTAL</span>
-                <span>{rm(total)}</span>
-              </div>
-            </div>
-
-            <button onClick={() => void sendOrder()} disabled={sending || cart.length === 0 || !onDuty} className="mt-3 w-full rounded-xl bg-rasa-600 py-3 text-sm font-black text-white shadow-lg shadow-rasa-600/25 transition hover:bg-rasa-700 disabled:cursor-not-allowed disabled:opacity-50">
-              {sending ? "Sending…" : `Send Order · ${rm(total)}`}
-            </button>
-            {cart.length > 0 && (
-              <button onClick={() => setCart([])} className="mt-2 w-full rounded-xl border border-stone-200 py-2 text-xs font-bold text-stone-500 hover:border-red-200 hover:text-red-500">
-                Clear
-              </button>
-            )}
+            {renderCartPanel(true)}
           </aside>
         </div>
+
+        {/* Mobile / tablet: review-order bar + full-screen cart sheet */}
+        {cartCount > 0 && !cartOpen && (
+          <button
+            onClick={() => setCartOpen(true)}
+            className="fixed inset-x-3 bottom-3 z-40 flex items-center justify-between rounded-2xl bg-rasa-600 px-5 py-4 text-white shadow-2xl shadow-rasa-900/30 transition active:scale-[0.99] lg:hidden"
+          >
+            <span className="text-sm font-black">
+              🛒 {cartCount} item{cartCount > 1 ? "s" : ""} · {rm(total)}
+            </span>
+            <span className="rounded-lg bg-white/20 px-3 py-1 text-sm font-black">Review</span>
+          </button>
+        )}
+
+        {cartOpen && (
+          <div className="fixed inset-0 z-50 flex flex-col bg-[#fdf8f6] lg:hidden">
+            <div className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-3">
+              <button onClick={() => setCartOpen(false)} className="rounded-lg px-2 py-1 text-sm font-black text-stone-600 active:scale-95">
+                ← Menu
+              </button>
+              <p className="text-sm font-black text-ink">
+                {type === "dine_in" && tableSel ? `Order · Table ${tableSel.number}` : "Order · Takeaway"}
+              </p>
+              <span className="w-14" />
+            </div>
+
+            <div className="flex-1 overflow-y-auto rounded-t-3xl border-x border-stone-200 bg-white px-4 py-4">
+              {renderCartPanel(false)}
+            </div>
+
+            <div className="border-t border-stone-200 bg-white px-4 py-3 pb-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-wide text-stone-400">Total</p>
+                  <p className="text-2xl font-black text-ink">{rm(total)}</p>
+                </div>
+                <button
+                  onClick={() => void sendOrder()}
+                  disabled={sending || cart.length === 0 || !onDuty}
+                  className="rounded-2xl bg-rasa-600 px-6 py-3 text-base font-black text-white shadow-lg shadow-rasa-600/30 transition active:scale-95 disabled:opacity-50"
+                >
+                  {sending ? "Sending…" : "Send order"}
+                </button>
+              </div>
+              {cart.length > 0 && (
+                <button onClick={() => setCart([])} className="mt-2 w-full text-center text-xs font-bold text-stone-400 hover:text-red-500">
+                  Clear order
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        </>
       ) : (
         /* Floor */
         <div className="space-y-4">
