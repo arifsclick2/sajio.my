@@ -24,6 +24,7 @@ use Laravel\Cashier\Billable;
     'trial_reminders_sent',
     'trial_locked_at',
     'trial_expired_email_sent_at',
+    'last_order_no',
     'stripe_id',
     'pm_type',
     'pm_last_four',

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\MenuController;
+use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RestaurantTableController;
 use App\Http\Controllers\Api\V1\TableSessionController;
@@ -67,6 +68,13 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/sessions/open-sessions', [TableSessionController::class, 'openSessions']);
         Route::get('/sessions/table/{table}', [TableSessionController::class, 'forTable']);
         Route::post('/sessions/{session}/close', [TableSessionController::class, 'close']);
+
+        // Orders — all restaurant roles (POS / staff / cashier)
+        Route::post('/orders', [OrderController::class, 'store']);
+        Route::get('/orders', [OrderController::class, 'index']);
+        Route::get('/orders/{order}', [OrderController::class, 'show']);
+        Route::post('/orders/{order}/status', [OrderController::class, 'updateStatus']);
+        Route::get('/orders/table/{table}/current', [OrderController::class, 'forTable']);
 
         // Menu + Tables (owner/manager)
         Route::middleware('role:owner,manager')->group(function (): void {
