@@ -17,6 +17,29 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend URL
+    |--------------------------------------------------------------------------
+    |
+    | The URL of the Next.js frontend (dashboard / landing). Used in emails
+    | and CORS so the API can point users back to the right place.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'https://app.sajio.my'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Super Admin email
+    |--------------------------------------------------------------------------
+    |
+    | Recipient for platform notifications (e.g. new restaurant registrations).
+    |
+    */
+
+    'super_admin_email' => env('SUPER_ADMIN_EMAIL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |
