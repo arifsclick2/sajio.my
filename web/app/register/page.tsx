@@ -43,7 +43,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
     if (password !== passwordConfirmation) {
-      setError("Kata laluan tidak sama. Sila cuba lagi.");
+      setError("Passwords do not match. Please try again.");
       return;
     }
     setLoading(true);
@@ -93,20 +93,22 @@ export default function RegisterPage() {
   }
 
   const inputCls =
-    "w-full rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm text-ink placeholder-stone-400 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100";
+    "w-full rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-sm text-ink placeholder-stone-400 outline-none transition focus:border-rasa-500 focus:ring-4 focus:ring-rasa-100";
+  const logoBtnCls =
+    "w-full rounded-xl bg-rasa-500 px-5 py-3 text-sm font-black text-white shadow-lg shadow-rasa-500/25 transition hover:bg-rasa-600 disabled:cursor-not-allowed disabled:opacity-60";
 
   if (registeredEmail) {
     return (
-      <main className="pattern-batik relative flex flex-1 items-center justify-center overflow-hidden px-4 py-16">
-        <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[40rem] -translate-x-1/2 rounded-full bg-brand-200/40 blur-3xl" />
-        <div className="relative w-full max-w-md rounded-3xl border border-stone-200 bg-white p-8 shadow-2xl shadow-brand-900/10">
+      <main className="relative flex flex-1 items-center justify-center overflow-hidden bg-[#fdf8f6] px-4 py-16">
+        <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[40rem] -translate-x-1/2 rounded-full bg-rasa-100/70 blur-3xl" />
+        <div className="relative w-full max-w-md rounded-3xl border border-stone-200 bg-white p-8 shadow-2xl shadow-rasa-900/10">
           <Link href="/" className="mb-7 block text-center text-xl font-extrabold tracking-tight text-ink">
-            <span className="mr-1.5 inline-grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-600 to-emerald-500 align-middle text-sm font-black text-white">S</span>
-            sajio<span className="text-brand-600">.</span>
+            <span className="mr-1.5 inline-grid h-8 w-8 place-items-center rounded-xl bg-rasa-500 align-middle text-sm font-black text-white">S</span>
+            sajio<span className="text-rasa-500">.</span>
           </Link>
-          <h1 className="text-center text-2xl font-black tracking-tight text-ink">Semak email anda 📩</h1>
+          <h1 className="text-center text-2xl font-black tracking-tight text-ink">Check your email 📩</h1>
           <p className="mt-2 text-center text-sm text-stone-500">
-            Kami hantar kod 6-digit ke <span className="font-bold text-ink">{registeredEmail}</span>. Kod sah selama 10 minit.
+            We sent a 6-digit code to <span className="font-bold text-ink">{registeredEmail}</span>. It expires in 10 minutes.
           </p>
 
           {error && <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">{error}</p>}
@@ -114,7 +116,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleVerify} className="mt-8 space-y-5">
             <div>
-              <label htmlFor="otp" className="mb-1.5 block text-sm font-bold text-stone-700">Kod pengesahan</label>
+              <label htmlFor="otp" className="mb-1.5 block text-sm font-bold text-stone-700">Verification code</label>
               <input
                 id="otp"
                 inputMode="numeric"
@@ -127,15 +129,15 @@ export default function RegisterPage() {
                 placeholder="••••••"
               />
             </div>
-            <button type="submit" disabled={otpLoading} className="w-full rounded-xl bg-brand-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-brand-700/25 transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60">
-              {otpLoading ? "Mengesahkan…" : "Sahkan & mula 14 hari percuma"}
+            <button type="submit" disabled={otpLoading} className={logoBtnCls}>
+              {otpLoading ? "Verifying…" : "Verify & start your 14-day free trial"}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-stone-500">
-            Tidak terima?{" "}
-            <button type="button" onClick={handleResend} className="font-black text-brand-700 hover:text-brand-800">
-              Hantar semula kod
+            Didn&apos;t receive it?{" "}
+            <button type="button" onClick={handleResend} className="font-black text-rasa-600 transition hover:text-rasa-700">
+              Resend code
             </button>
           </p>
         </div>
@@ -144,69 +146,69 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="pattern-batik relative flex flex-1 items-center justify-center overflow-hidden px-4 py-16">
-      <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[40rem] -translate-x-1/2 rounded-full bg-gold-300/30 blur-3xl" />
-      <div className="relative w-full max-w-lg rounded-3xl border border-stone-200 bg-white p-8 shadow-2xl shadow-brand-900/10">
+    <main className="relative flex flex-1 items-center justify-center overflow-hidden bg-[#fdf8f6] px-4 py-16">
+      <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[40rem] -translate-x-1/2 rounded-full bg-rasa-100/70 blur-3xl" />
+      <div className="relative w-full max-w-lg rounded-3xl border border-stone-200 bg-white p-8 shadow-2xl shadow-rasa-900/10">
         <Link href="/" className="mb-7 block text-center text-xl font-extrabold tracking-tight text-ink">
-          <span className="mr-1.5 inline-grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-600 to-emerald-500 align-middle text-sm font-black text-white">S</span>
-          sajio<span className="text-brand-600">.</span>
+          <span className="mr-1.5 inline-grid h-8 w-8 place-items-center rounded-xl bg-rasa-500 align-middle text-sm font-black text-white">S</span>
+          sajio<span className="text-rasa-500">.</span>
         </Link>
-        <h1 className="text-center text-2xl font-black tracking-tight text-ink">Cipta restoran anda</h1>
-        <p className="mt-2 text-center text-sm text-stone-500">14 hari percuma · Tiada kad kredit diperlukan</p>
+        <h1 className="text-center text-2xl font-black tracking-tight text-ink">Create your restaurant</h1>
+        <p className="mt-2 text-center text-sm text-stone-500">14-day free trial · No credit card needed</p>
 
         {error && <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">{error}</p>}
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-sm font-bold text-stone-700">Nama anda</label>
-              <input required value={name} onChange={(e) => setName(e.target.value)} className={inputCls} placeholder="Nama penuh" />
+              <label className="mb-1.5 block text-sm font-bold text-stone-700">Your name</label>
+              <input required value={name} onChange={(e) => setName(e.target.value)} className={inputCls} placeholder="Full name" />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-bold text-stone-700">Nama restoran</label>
+              <label className="mb-1.5 block text-sm font-bold text-stone-700">Restaurant name</label>
               <input required value={restaurantName} onChange={(e) => setRestaurantName(e.target.value)} className={inputCls} placeholder="Kedai Kopi Sajio" />
             </div>
           </div>
 
           <div>
             <label className="mb-1.5 block text-sm font-bold text-stone-700">Email</label>
-            <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} placeholder="anda@restoran.my" />
+            <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} placeholder="you@restaurant.my" />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-bold text-stone-700">Subdomain restoran</label>
-            <div className="flex items-center rounded-xl border border-stone-300 bg-white px-4 focus-within:border-brand-500 focus-within:ring-4 focus-within:ring-brand-100">
-              <input required value={subdomain} onChange={(e) => checkSubdomain(e.target.value)} className="w-full bg-transparent py-2.5 text-sm text-ink placeholder-stone-400 outline-none" placeholder="kedai-sajio" />
+            <label className="mb-1.5 block text-sm font-bold text-stone-700">Restaurant subdomain</label>
+            <div className="flex items-center rounded-xl border border-stone-300 bg-white px-4 focus-within:border-rasa-500 focus-within:ring-4 focus-within:ring-rasa-100">
+              <input required value={subdomain} onChange={(e) => checkSubdomain(e.target.value)} className="w-full bg-transparent py-2.5 text-sm text-ink placeholder-stone-400 outline-none" placeholder="your-kopitiam" />
               <span className="shrink-0 text-sm font-medium text-stone-400">.sajio.my</span>
             </div>
-            {subAvailable === true && <p className="mt-1 text-xs font-semibold text-emerald-600">✓ Subdomain tersedia</p>}
-            {subAvailable === false && <p className="mt-1 text-xs font-semibold text-red-500">✕ Subdomain telah digunakan atau tidak sah</p>}
+            {subAvailable === true && <p className="mt-1 text-xs font-semibold text-emerald-600">✓ Subdomain is available</p>}
+            {subAvailable === false && <p className="mt-1 text-xs font-semibold text-rasa-500">✕ Subdomain is taken or invalid</p>}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-sm font-bold text-stone-700">Kata laluan</label>
-              <input type="password" required autoComplete="new-password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} placeholder="Min 8 aksara" />
+              <label className="mb-1.5 block text-sm font-bold text-stone-700">Password</label>
+              <input type="password" required autoComplete="new-password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} placeholder="Min 8 characters" />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-bold text-stone-700">Sahkan kata laluan</label>
+              <label className="mb-1.5 block text-sm font-bold text-stone-700">Confirm password</label>
               <input type="password" required autoComplete="new-password" minLength={8} value={passwordConfirmation} onChange={(e) => setPasswordConfirmation(e.target.value)} className={inputCls} placeholder="••••••••" />
             </div>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-bold text-stone-700">Kod promo <span className="font-normal text-stone-400">(pilihan)</span></label>
+            <label className="mb-1.5 block text-sm font-bold text-stone-700">Promo code <span className="font-normal text-stone-400">(optional)</span></label>
             <input value={couponCode} onChange={(e) => setCouponCode(e.target.value)} className={inputCls} placeholder="SAJIO10" />
           </div>
 
-          <button type="submit" disabled={loading} className="w-full rounded-xl bg-brand-700 px-5 py-3 text-sm font-black text-white shadow-lg shadow-brand-700/25 transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60">
-            {loading ? "Mendaftar…" : "Daftar & dapatkan kod OTP"}
+          <button type="submit" disabled={loading} className={logoBtnCls}>
+            {loading ? "Creating account…" : "Create account & get your OTP"}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-stone-500">
-          Sudah ada akaun?{" "}
-          <Link href="/login" className="font-black text-brand-700 transition hover:text-brand-800">Log masuk</Link>
+          Already have an account?{" "}
+          <Link href="/login" className="font-black text-rasa-600 transition hover:text-rasa-700">Log in</Link>
         </p>
       </div>
     </main>
