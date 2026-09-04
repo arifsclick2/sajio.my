@@ -102,7 +102,7 @@ class PaymentsTest extends TestCase
 
         $this->assertSame('25.00', $resp['payment']['amount']);
         $this->assertSame('cash', $resp['payment']['method']);
-        $this->assertSame('Tunai', $resp['payment']['method_label']);
+        $this->assertSame('Cash', $resp['payment']['method_label']);
         $this->assertSame($order['id'], $resp['payment']['order_id']);
         $this->assertSame('completed', $resp['order']['status']);
         $this->assertNotNull($resp['order']['completed_at']);

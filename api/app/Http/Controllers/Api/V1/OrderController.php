@@ -59,7 +59,7 @@ class OrderController extends Controller
         $order = $this->orders->createOrder($request->user(), $restaurant, $validated);
 
         return response()->json([
-            'message' => "Order {$order->order_no} diterima.",
+            'message' => "Order {$order->order_no} received.",
             'order' => $this->shape($order),
         ], 201);
     }
@@ -129,7 +129,7 @@ class OrderController extends Controller
         );
 
         return response()->json([
-            'message' => "Order {$order->order_no} kini: {$updated->status->label()}.",
+            'message' => "Order {$order->order_no} is now: {$updated->status->label()}.",
             'order' => $this->shape($updated),
         ]);
     }

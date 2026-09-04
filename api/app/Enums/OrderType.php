@@ -11,7 +11,7 @@ enum OrderType: string
     {
         return match ($this) {
             self::DineIn => 'Dine-in',
-            self::Takeaway => 'Takeaway / Bungkus',
+            self::Takeaway => 'Takeaway',
         };
     }
 }

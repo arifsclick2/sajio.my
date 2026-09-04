@@ -15,12 +15,12 @@ enum OrderStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::New => 'Baru',
-            self::Preparing => 'Memasak',
-            self::Ready => 'Sedia',
-            self::Served => 'Dihidang',
-            self::Completed => 'Selesai',
-            self::Cancelled => 'Batal',
+            self::New => 'New',
+            self::Preparing => 'Preparing',
+            self::Ready => 'Ready',
+            self::Served => 'Served',
+            self::Completed => 'Completed',
+            self::Cancelled => 'Cancelled',
             self::Voided => 'Void',
         };
     }

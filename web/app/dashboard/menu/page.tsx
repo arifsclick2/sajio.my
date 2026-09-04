@@ -24,8 +24,8 @@ function Modal({ title, children, onClose }: ModalProps) {
 }
 
 const inputCls =
-  "w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100";
-const btnPrimary = "rounded-xl bg-brand-700 px-4 py-2 text-sm font-black text-white transition hover:bg-brand-800 disabled:opacity-50";
+  "w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-rasa-500 focus:ring-4 focus:ring-rasa-100";
+const btnPrimary = "rounded-xl bg-rasa-600 px-4 py-2 text-sm font-black text-white transition hover:bg-rasa-700 disabled:opacity-50";
 
 function MenuPageContent() {
   const { role } = useDashboard();
@@ -58,7 +58,7 @@ function MenuPageContent() {
       setProducts(list);
       setErr(null);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Gagal memuat menu.");
+      setErr(e instanceof Error ? e.message : "Failed to load menu.");
     }
   }, [token]);
 
@@ -89,22 +89,22 @@ function MenuPageContent() {
         await api.createCategory(token, { name: catModal.name, description: catModal.description || undefined });
       }
       setCatModal(null);
-      flashOk("Kategori disimpan.");
+      flashOk("Category saved.");
       void load();
     } catch (e2) {
-      setErr(e2 instanceof Error ? e2.message : "Gagal menyimpan kategori.");
+      setErr(e2 instanceof Error ? e2.message : "Failed to save category.");
     }
   }
 
   async function removeCategory(c: CategoryInfo) {
     if (!token) return;
-    if (!window.confirm(`Buang kategori "${c.name}"?`)) return;
+    if (!window.confirm(`Delete kategori "${c.name}"?`)) return;
     try {
       await api.deleteCategory(token, c.id);
-      flashOk("Kategori dibuang.");
+      flashOk("Category deleted.");
       void load();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Gagal.");
+      setErr(e instanceof Error ? e.message : "Failed.");
     }
   }
 
@@ -127,7 +127,7 @@ function MenuPageContent() {
     if (!token || !prodModal) return;
     const price = Number(prodModal.price);
     if (Number.isNaN(price) || price < 0 || !prodModal.category_id) {
-      setErr("Sila pilih kategori dan harga yang sah.");
+      setErr("Please choose a valid category and price.");
       return;
     }
     try {
@@ -142,10 +142,10 @@ function MenuPageContent() {
       if (prodModal.id) await api.updateProduct(token, prodModal.id, data);
       else await api.createProduct(token, data);
       setProdModal(null);
-      flashOk("Produk disimpan.");
+      flashOk("Product saved.");
       void load();
     } catch (e2) {
-      setErr(e2 instanceof Error ? e2.message : "Gagal menyimpan produk.");
+      setErr(e2 instanceof Error ? e2.message : "Failed to save product.");
     }
   }
 
@@ -155,19 +155,19 @@ function MenuPageContent() {
       await api.updateProduct(token, p.id, { available: !p.available });
       void load();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Gagal.");
+      setErr(e instanceof Error ? e.message : "Failed.");
     }
   }
 
   async function removeProduct(p: ProductInfo) {
     if (!token) return;
-    if (!window.confirm(`Buang "${p.name}"?`)) return;
+    if (!window.confirm(`Delete "${p.name}"?`)) return;
     try {
       await api.deleteProduct(token, p.id);
-      flashOk("Produk dibuang.");
+      flashOk("Product deleted.");
       void load();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Gagal.");
+      setErr(e instanceof Error ? e.message : "Failed.");
     }
   }
 
@@ -179,7 +179,7 @@ function MenuPageContent() {
           <p className="text-sm text-stone-500">Kategori &amp; produk untuk POS dan QR ordering.</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setCatModal({ name: "", description: "" })} className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-black text-stone-700 transition hover:border-brand-300 hover:text-brand-700">
+          <button onClick={() => setCatModal({ name: "", description: "" })} className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-black text-stone-700 transition hover:border-rasa-300 hover:text-rasa-600">
             + Kategori
           </button>
           <button onClick={openNewProduct} disabled={categories.length === 0} className={btnPrimary}>
@@ -196,9 +196,9 @@ function MenuPageContent() {
         <aside className="h-fit space-y-1 rounded-2xl border border-stone-200 bg-white p-3">
           <button
             onClick={() => setActiveCat(null)}
-            className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-bold ${activeCat === null ? "bg-brand-700 text-white" : "text-stone-600 hover:bg-brand-50"}`}
+            className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-bold ${activeCat === null ? "bg-rasa-600 text-white" : "text-stone-600 hover:bg-rasa-50"}`}
           >
-            <span>Semua</span>
+            <span>All</span>
             <span className="text-xs opacity-70">{products.length}</span>
           </button>
           {categories.map((c) => (
@@ -206,7 +206,7 @@ function MenuPageContent() {
               <button
                 onClick={() => setActiveCat(c.id)}
                 className={`flex flex-1 items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-bold ${
-                  activeCat === c.id ? "bg-brand-700 text-white" : "text-stone-600 hover:bg-brand-50"
+                  activeCat === c.id ? "bg-rasa-600 text-white" : "text-stone-600 hover:bg-rasa-50"
                 }`}
               >
                 <span className="truncate">{c.name}</span>
@@ -214,7 +214,7 @@ function MenuPageContent() {
               </button>
               <button
                 onClick={() => setCatModal({ id: c.id, name: c.name, description: c.description ?? "" })}
-                className="rounded-lg p-1 text-xs text-stone-400 opacity-0 transition group-hover:opacity-100 hover:text-brand-700"
+                className="rounded-lg p-1 text-xs text-stone-400 opacity-0 transition group-hover:opacity-100 hover:text-rasa-600"
                 title="Edit"
               >
                 ✏️
@@ -222,20 +222,20 @@ function MenuPageContent() {
               <button
                 onClick={() => removeCategory(c)}
                 className="rounded-lg p-1 text-xs text-stone-400 opacity-0 transition group-hover:opacity-100 hover:text-red-600"
-                title="Buang"
+                title="Delete"
               >
                 🗑️
               </button>
             </div>
           ))}
-          {categories.length === 0 && <p className="px-3 py-4 text-center text-xs text-stone-400">Tiada kategori. Tambah satu dahulu.</p>}
+          {categories.length === 0 && <p className="px-3 py-4 text-center text-xs text-stone-400">No categories yet. Add one first.</p>}
         </aside>
 
         {/* Products */}
         <div className="space-y-3">
           {shown.length === 0 && (
             <div className="rounded-2xl border border-dashed border-stone-300 bg-white/50 p-10 text-center text-sm text-stone-400">
-              Tiada produk di sini. Klik <b>+ Produk</b> untuk tambah.
+              No products here. Click <b>+ Product</b> to add one.
             </div>
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -246,7 +246,7 @@ function MenuPageContent() {
                     <p className="truncate font-black text-ink">{p.name}</p>
                     <p className="text-sm text-stone-500">{p.category?.name ?? ""}</p>
                   </div>
-                  <p className="shrink-0 font-black text-brand-700">{rm(p.price)}</p>
+                  <p className="shrink-0 font-black text-rasa-600">{rm(p.price)}</p>
                 </div>
                 {p.description && <p className="mt-1 line-clamp-2 text-xs text-stone-400">{p.description}</p>}
                 <div className="mt-3 flex items-center justify-between gap-2">
@@ -254,7 +254,7 @@ function MenuPageContent() {
                     onClick={() => toggleProduct(p)}
                     className={`rounded-full px-3 py-1 text-xs font-black ${p.available ? "bg-emerald-100 text-emerald-700" : "bg-stone-200 text-stone-500"}`}
                   >
-                    {p.available ? "✓ Tersedia" : "Habis"}
+                    {p.available ? "✓ Available" : "Sold out"}
                   </button>
                   <div className="flex gap-1">
                     <button
@@ -269,12 +269,12 @@ function MenuPageContent() {
                           is_active: p.is_active,
                         })
                       }
-                      className="rounded-lg border border-stone-200 px-2 py-1 text-xs font-bold text-stone-600 hover:border-brand-300 hover:text-brand-700"
+                      className="rounded-lg border border-stone-200 px-2 py-1 text-xs font-bold text-stone-600 hover:border-rasa-300 hover:text-rasa-600"
                     >
                       Edit
                     </button>
                     <button onClick={() => removeProduct(p)} className="rounded-lg border border-stone-200 px-2 py-1 text-xs font-bold text-stone-600 hover:border-red-300 hover:text-red-600">
-                      Buang
+                      Delete
                     </button>
                   </div>
                 </div>
@@ -286,18 +286,18 @@ function MenuPageContent() {
 
       {/* Category modal */}
       {catModal && (
-        <Modal title={catModal.id ? "Edit kategori" : "Kategori baru"} onClose={() => setCatModal(null)}>
+        <Modal title={catModal.id ? "Edit category" : "New category"} onClose={() => setCatModal(null)}>
           <form onSubmit={saveCategory} className="space-y-4">
-            <input required value={catModal.name} onChange={(e) => setCatModal({ ...catModal, name: e.target.value })} className={inputCls} placeholder="Nama kategori (cth: Nasi, Minuman)" />
-            <input value={catModal.description} onChange={(e) => setCatModal({ ...catModal, description: e.target.value })} className={inputCls} placeholder="Penerangan (pilihan)" />
-            <button type="submit" className={`${btnPrimary} w-full`}>Simpan</button>
+            <input required value={catModal.name} onChange={(e) => setCatModal({ ...catModal, name: e.target.value })} className={inputCls} placeholder="Category name (e.g. Rice, Drinks)" />
+            <input value={catModal.description} onChange={(e) => setCatModal({ ...catModal, description: e.target.value })} className={inputCls} placeholder="Description (optional)" />
+            <button type="submit" className={`${btnPrimary} w-full`}>Save</button>
           </form>
         </Modal>
       )}
 
       {/* Product modal */}
       {prodModal && (
-        <Modal title={prodModal.id ? "Edit produk" : "Produk baru"} onClose={() => setProdModal(null)}>
+        <Modal title={prodModal.id ? "Edit product" : "New product"} onClose={() => setProdModal(null)}>
           <form onSubmit={saveProduct} className="space-y-3">
             <div>
               <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Kategori</label>
@@ -314,11 +314,11 @@ function MenuPageContent() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Nama</label>
+              <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Name</label>
               <input required value={prodModal.name} onChange={(e) => setProdModal({ ...prodModal, name: e.target.value })} className={inputCls} placeholder="Nasi Lemak Ayam" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Harga (RM)</label>
+              <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Price (RM)</label>
               <input required type="number" step="0.05" min="0" value={prodModal.price} onChange={(e) => setProdModal({ ...prodModal, price: e.target.value })} className={inputCls} placeholder="12.50" />
             </div>
             <div>
@@ -327,9 +327,9 @@ function MenuPageContent() {
             </div>
             <label className="flex items-center gap-2 text-sm font-bold text-stone-700">
               <input type="checkbox" checked={prodModal.available} onChange={(e) => setProdModal({ ...prodModal, available: e.target.checked })} />
-              Tersedia untuk dijual
+              Available for sale
             </label>
-            <button type="submit" className={`${btnPrimary} w-full`}>Simpan</button>
+            <button type="submit" className={`${btnPrimary} w-full`}>Save</button>
           </form>
         </Modal>
       )}

@@ -79,7 +79,7 @@ class ReceiptsTest extends TestCase
         $this->assertSame('5.00', $receipt['order']['total']);
         $this->assertCount(1, $receipt['payments']);
         $this->assertSame('cash', $receipt['payments'][0]['method']);
-        $this->assertSame('Tunai', $receipt['payments'][0]['method_label']);
+        $this->assertSame('Cash', $receipt['payments'][0]['method_label']);
         $this->assertSame('5.00', $receipt['total_paid']);
     }
 

@@ -8,23 +8,23 @@ import { api, BillResponse, CategoryInfo, OrderInfo, ProductInfo, SessionInfo, T
 import { getToken } from "../../../lib/session";
 
 const STATUS_LABEL: Record<string, string> = {
-  new: "Baru",
-  preparing: "Memasak",
-  ready: "Sedia",
-  served: "Dihidang",
-  completed: "Selesai",
-  cancelled: "Batal",
+  new: "New",
+  preparing: "Preparing",
+  ready: "Ready",
+  served: "Served",
+  completed: "Completed",
+  cancelled: "Cancelled",
   voided: "Void",
 };
 
 /** Allowed forward action (first non-cancel) per status — mirrors backend map. */
 const FORWARD: Record<string, { next?: string; label: string }> = {
-  new: { next: "preparing", label: "→ Memasak" },
-  preparing: { next: "ready", label: "→ Sedia" },
-  ready: { next: "served", label: "→ Dihidang" },
-  served: { next: "completed", label: "→ Selesai" },
-  completed: { label: "Selesai ✓" },
-  cancelled: { label: "Batal" },
+  new: { next: "preparing", label: "→ Preparing" },
+  preparing: { next: "ready", label: "→ Ready" },
+  ready: { next: "served", label: "→ Served" },
+  served: { next: "completed", label: "→ Completed" },
+  completed: { label: "Completed ✓" },
+  cancelled: { label: "Cancelled" },
   voided: { label: "Void" },
 };
 
@@ -32,10 +32,10 @@ const CANCEL_ALLOWED = new Set(["new", "preparing"]);
 const PAYABLE = new Set(["new", "preparing", "ready", "served"]);
 
 const METHODS = [
-  { m: "cash", label: "💵 Tunai" },
-  { m: "card", label: "💳 Kad" },
+  { m: "cash", label: "💵 Cash" },
+  { m: "card", label: "💳 Card" },
   { m: "qr", label: "📱 QR / DuitNow" },
-  { m: "other", label: "🔘 Lain-lain" },
+  { m: "other", label: "🔘 Other" },
 ];
 
 interface CartLine {
@@ -56,7 +56,7 @@ function PosPageContent() {
   const { role, attendance, clockIn } = useDashboard();
   const token = getToken();
   const canManage = role === "owner" || role === "manager";
-  const staffLabel = role === "manager" ? "Pengurus" : "Staff";
+  const staffLabel = role === "manager" ? "Manager" : "Staff";
 
   const [tab, setTab] = useState<"order" | "floor">("order");
   const [type, setType] = useState<"dine_in" | "takeaway">("dine_in");
@@ -103,7 +103,7 @@ function PosPageContent() {
       setTables(t.tables.filter((x) => x.is_active));
       setSessions(s.sessions);
     } catch (e) {
-      flash(e instanceof Error ? e.message : "Gagal memuat menu.", true);
+      flash(e instanceof Error ? e.message : "Failed to load menu.", true);
     }
   }, [token]);
 
@@ -165,15 +165,15 @@ function PosPageContent() {
   async function sendOrder() {
     if (!token) return;
     if (cart.length === 0) {
-      flash("Keranjang kosong.", true);
+      flash("Cart is empty.", true);
       return;
     }
     if (type === "dine_in" && !tableSel) {
-      flash("Pilih meja untuk dine-in.", true);
+      flash("Choose table untuk dine-in.", true);
       return;
     }
     if (!onDuty) {
-      flash("Clock in dahulu sebelum mengambil order.", true);
+      flash("Clock in first before taking orders.", true);
       return;
     }
     setSending(true);
@@ -195,7 +195,7 @@ function PosPageContent() {
       await loadOrders();
       void loadMenu();
     } catch (e) {
-      flash(e instanceof Error ? e.message : "Gagal hantar order.", true);
+      flash(e instanceof Error ? e.message : "Failed to send order.", true);
     } finally {
       setSending(false);
     }
@@ -210,7 +210,7 @@ function PosPageContent() {
       await loadOrders();
       void loadMenu();
     } catch (e) {
-      flash(e instanceof Error ? e.message : "Gagal kemas kini status.", true);
+      flash(e instanceof Error ? e.message : "Failed to update status.", true);
     }
   }
 
@@ -222,14 +222,14 @@ function PosPageContent() {
         const bill = await api.tableCurrent(token, order.table.id);
         setPay((p) => (p ? { ...p, bill } : p));
       } catch (e) {
-        flash(e instanceof Error ? e.message : "Gagal memuat bil.", true);
+        flash(e instanceof Error ? e.message : "Failed to load bill.", true);
       }
     } else {
       setPay({
         order,
         sessionId: null,
         tableNumber: null,
-        bill: { table: { id: 0, number: "Bungkus" }, orders: [order], bill_total: order.total },
+        bill: { table: { id: 0, number: "Takeaway" }, orders: [order], bill_total: order.total },
         method: "",
         busy: false,
       });
@@ -243,12 +243,12 @@ function PosPageContent() {
     try {
       if (d.sessionId && d.bill) {
         await api.settleSession(token, d.sessionId, { method: d.method });
-        flash("Bil meja diselesaikan ✅");
+        flash("Table bill settled ✅");
         const receipt = await api.sessionReceipt(token, d.sessionId);
         printReceipt(receipt.receipt);
       } else if (d.order) {
         await api.payOrder(token, d.order.id, { method: d.method });
-        flash(`${d.order.order_no} dibayar ✅`);
+        flash(`${d.order.order_no} paid ✅`);
         const receipt = await api.orderReceipt(token, d.order.id);
         printReceipt(receipt.receipt);
       }
@@ -256,7 +256,7 @@ function PosPageContent() {
       await loadOrders();
       void loadMenu();
     } catch (e) {
-      flash(e instanceof Error ? e.message : "Gagal memproses bayaran.", true);
+      flash(e instanceof Error ? e.message : "Failed to process payment.", true);
       setPay((p) => (p ? { ...p, busy: false } : p));
     }
   }
@@ -274,14 +274,14 @@ function PosPageContent() {
           <h1 className="text-2xl font-black tracking-tight text-ink">POS 🧾</h1>
           <p className="text-sm text-stone-500">
             {canManage ? "" : `${staffLabel} · `}
-            {attendance ? (onDuty ? "● Bertugas" : "○ Belum clock in") : "Pemilik restoran"}
+            {attendance ? (onDuty ? "● On duty" : "○ Not clocked in") : "Restaurant owner"}
           </p>
         </div>
         <div className="flex rounded-xl border border-stone-200 bg-white p-1">
-          <button onClick={() => setTab("order")} className={`rounded-lg px-4 py-2 text-sm font-black transition ${tab === "order" ? "bg-brand-700 text-white" : "text-stone-500 hover:text-brand-700"}`}>
+          <button onClick={() => setTab("order")} className={`rounded-lg px-4 py-2 text-sm font-black transition ${tab === "order" ? "bg-rasa-600 text-white" : "text-stone-500 hover:text-rasa-600"}`}>
             + Order baru
           </button>
-          <button onClick={() => setTab("floor")} className={`rounded-lg px-4 py-2 text-sm font-black transition ${tab === "floor" ? "bg-brand-700 text-white" : "text-stone-500 hover:text-brand-700"}`}>
+          <button onClick={() => setTab("floor")} className={`rounded-lg px-4 py-2 text-sm font-black transition ${tab === "floor" ? "bg-rasa-600 text-white" : "text-stone-500 hover:text-rasa-600"}`}>
             Floor {openCount > 0 ? `(${openCount})` : ""}
           </button>
         </div>
@@ -293,9 +293,9 @@ function PosPageContent() {
       {/* Clock-in nudge */}
       {attendance && !onDuty && (
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <p className="text-sm font-semibold text-amber-700">Anda perlu clock in dahulu untuk mengambil order.</p>
+          <p className="text-sm font-semibold text-amber-700">You need to clock in before taking orders.</p>
           <button onClick={() => void clockIn()} className="rounded-lg bg-amber-600 px-4 py-2 text-xs font-black text-white transition hover:bg-amber-500">
-            Clock in sekarang
+            Clock in now
           </button>
         </div>
       )}
@@ -308,7 +308,7 @@ function PosPageContent() {
               {(
                 [
                   ["dine_in", "Dine-in"],
-                  ["takeaway", "Takeaway / Bungkus"],
+                  ["takeaway", "Takeaway"],
                 ] as const
               ).map(([v, label]) => (
                 <button
@@ -318,7 +318,7 @@ function PosPageContent() {
                     if (v === "takeaway") setTableSel(null);
                   }}
                   className={`rounded-xl px-5 py-2.5 text-sm font-black transition ${
-                    type === v ? "bg-brand-700 text-white shadow-md" : "border border-stone-200 bg-white text-stone-600 hover:border-brand-300"
+                    type === v ? "bg-rasa-600 text-white shadow-md" : "border border-stone-200 bg-white text-stone-600 hover:border-rasa-300"
                   }`}
                 >
                   {label}
@@ -328,7 +328,7 @@ function PosPageContent() {
 
             {type === "dine_in" && (
               <div className="rounded-2xl border border-stone-200 bg-white p-4">
-                <p className="mb-2 text-xs font-black uppercase tracking-wide text-stone-500">Pilih meja</p>
+                <p className="mb-2 text-xs font-black uppercase tracking-wide text-stone-500">Choose table</p>
                 <div className="flex flex-wrap gap-2">
                   {tables.map((t) => {
                     const occupied = sessionForTable.has(t.id);
@@ -339,10 +339,10 @@ function PosPageContent() {
                         onClick={() => setTableSel(active ? null : t)}
                         className={`rounded-xl border-2 px-4 py-2 text-sm font-black transition ${
                           active
-                            ? "border-brand-700 bg-brand-700 text-white"
+                            ? "border-rasa-600 bg-rasa-600 text-white"
                             : occupied
-                              ? "border-brand-300 bg-brand-50 text-brand-800"
-                              : "border-stone-200 bg-white text-stone-700 hover:border-brand-300"
+                              ? "border-rasa-300 bg-rasa-50 text-rasa-700"
+                              : "border-stone-200 bg-white text-stone-700 hover:border-rasa-300"
                         }`}
                       >
                         {t.number}
@@ -350,11 +350,11 @@ function PosPageContent() {
                       </button>
                     );
                   })}
-                  {tables.length === 0 && <p className="text-sm text-stone-400">Tiada meja — buat di halaman Meja dahulu.</p>}
+                  {tables.length === 0 && <p className="text-sm text-stone-400">No tables yet — create some on the Tables page first.</p>}
                 </div>
                 {tableSel && (
-                  <p className="mt-2 text-xs font-bold text-brand-700">
-                    Meja {tableSel.number} dipilih{sessionForTable.has(tableSel.id) ? " (sesi sedia ada — order akan digabungkan)" : ""}
+                  <p className="mt-2 text-xs font-bold text-rasa-600">
+                    Table {tableSel.number} selected{sessionForTable.has(tableSel.id) ? " (existing session — orders will be combined)" : ""}
                   </p>
                 )}
               </div>
@@ -366,7 +366,7 @@ function PosPageContent() {
                 onClick={() => setCatSel(null)}
                 className={`rounded-full px-3.5 py-1.5 text-xs font-black transition ${catSel === null ? "bg-stone-800 text-white" : "border border-stone-200 bg-white text-stone-500 hover:border-stone-400"}`}
               >
-                Semua
+                All
               </button>
               {cats.map((c) => (
                 <button
@@ -390,7 +390,7 @@ function PosPageContent() {
                   onClick={() => addToCart(p)}
                   className={`rounded-2xl border p-4 text-left transition ${
                     p.available
-                      ? "border-stone-200 bg-white hover:-translate-y-0.5 hover:border-brand-400 hover:shadow-md active:scale-[0.98]"
+                      ? "border-stone-200 bg-white hover:-translate-y-0.5 hover:border-rasa-400 hover:shadow-md active:scale-[0.98]"
                       : "cursor-not-allowed border-stone-200 bg-stone-100 opacity-60"
                   }`}
                 >
@@ -398,19 +398,19 @@ function PosPageContent() {
                     <p className="line-clamp-2 text-sm font-black text-ink">{p.name}</p>
                     <span className="shrink-0 text-[9px] font-black uppercase text-stone-300">+</span>
                   </div>
-                  <p className="mt-1 text-sm font-black text-brand-700">{rm(p.price)}</p>
-                  {!p.available && <p className="text-[10px] font-bold uppercase text-stone-400">Habis</p>}
+                  <p className="mt-1 text-sm font-black text-rasa-600">{rm(p.price)}</p>
+                  {!p.available && <p className="text-[10px] font-bold uppercase text-stone-400">Sold out</p>}
                 </button>
               ))}
-              {shownCats.length === 0 && <p className="col-span-full py-8 text-center text-sm text-stone-400">Tiada produk. Tambah menu dahulu.</p>}
+              {shownCats.length === 0 && <p className="col-span-full py-8 text-center text-sm text-stone-400">No products yet. Add some to the menu first.</p>}
             </div>
           </div>
 
           {/* Right: cart */}
           <aside className="h-fit rounded-2xl border border-stone-200 bg-white p-4 xl:sticky xl:top-20">
-            <p className="font-black text-ink">Order {type === "dine_in" ? `— Meja ${tableSel?.number ?? "?"}` : "— Bungkus"}</p>
+            <p className="font-black text-ink">Order {type === "dine_in" ? `— Table ${tableSel?.number ?? "?"}` : "— Takeaway"}</p>
             <div className="mt-3 max-h-72 space-y-2 overflow-auto pr-1">
-              {cart.length === 0 && <p className="py-6 text-center text-sm text-stone-400">Klik produk untuk tambah ke order.</p>}
+              {cart.length === 0 && <p className="py-6 text-center text-sm text-stone-400">Click a product to add it to the order.</p>}
               {cart.map((l) => (
                 <div key={l.product.id} className="flex items-center gap-2 rounded-xl border border-stone-200 p-2">
                   <div className="min-w-0 flex-1">
@@ -422,7 +422,7 @@ function PosPageContent() {
                       −
                     </button>
                     <span className="w-6 text-center text-sm font-black text-ink">{l.qty}</span>
-                    <button onClick={() => setQty(l.product.id, l.qty + 1)} className="grid h-6 w-6 place-items-center rounded-md border border-stone-200 text-sm font-black text-stone-500 hover:border-brand-300 hover:text-brand-700">
+                    <button onClick={() => setQty(l.product.id, l.qty + 1)} className="grid h-6 w-6 place-items-center rounded-md border border-stone-200 text-sm font-black text-stone-500 hover:border-rasa-300 hover:text-rasa-600">
                       +
                     </button>
                   </div>
@@ -431,7 +431,7 @@ function PosPageContent() {
             </div>
 
             <div className="mt-3 flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-wide text-stone-500">Diskaun (RM)</span>
+              <span className="text-xs font-black uppercase tracking-wide text-stone-500">Discount (RM)</span>
               <input
                 type="number"
                 min="0"
@@ -439,14 +439,14 @@ function PosPageContent() {
                 value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
                 placeholder="0.00"
-                className="w-24 rounded-lg border border-stone-300 px-2 py-1 text-right text-sm font-bold outline-none focus:border-brand-500"
+                className="w-24 rounded-lg border border-stone-300 px-2 py-1 text-right text-sm font-bold outline-none focus:border-rasa-500"
               />
             </div>
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Nota order (pilihan)…"
-              className="mt-2 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+              placeholder="Order note (optional)…"
+              className="mt-2 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none focus:border-rasa-500"
             />
 
             <div className="mt-3 space-y-1 border-t border-stone-200 pt-3 text-sm">
@@ -456,22 +456,22 @@ function PosPageContent() {
               </div>
               {discountVal > 0 && (
                 <div className="flex justify-between text-red-500">
-                  <span>Diskaun</span>
+                  <span>Discount</span>
                   <span className="font-bold">−{rm(discountVal)}</span>
                 </div>
               )}
               <div className="flex justify-between text-lg font-black text-ink">
-                <span>JUMLAH</span>
+                <span>TOTAL</span>
                 <span>{rm(total)}</span>
               </div>
             </div>
 
-            <button onClick={() => void sendOrder()} disabled={sending || cart.length === 0 || !onDuty} className="mt-3 w-full rounded-xl bg-brand-700 py-3 text-sm font-black text-white shadow-lg shadow-brand-700/25 transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50">
-              {sending ? "Menghantar…" : `Hantar Order · ${rm(total)}`}
+            <button onClick={() => void sendOrder()} disabled={sending || cart.length === 0 || !onDuty} className="mt-3 w-full rounded-xl bg-rasa-600 py-3 text-sm font-black text-white shadow-lg shadow-rasa-600/25 transition hover:bg-rasa-700 disabled:cursor-not-allowed disabled:opacity-50">
+              {sending ? "Sending…" : `Send Order · ${rm(total)}`}
             </button>
             {cart.length > 0 && (
               <button onClick={() => setCart([])} className="mt-2 w-full rounded-xl border border-stone-200 py-2 text-xs font-bold text-stone-500 hover:border-red-200 hover:text-red-500">
-                Kosongkan
+                Clear
               </button>
             )}
           </aside>
@@ -488,13 +488,13 @@ function PosPageContent() {
                   statusFilter === s ? "bg-stone-800 text-white" : "border border-stone-200 bg-white text-stone-500 hover:border-stone-400"
                 }`}
               >
-                {s === "all" ? `Semua (${orders.length})` : `${STATUS_LABEL[s] ?? s} (${orders.filter((o) => o.status === s).length})`}
+                {s === "all" ? `All (${orders.length})` : `${STATUS_LABEL[s] ?? s} (${orders.filter((o) => o.status === s).length})`}
               </button>
             ))}
           </div>
 
           <div className="space-y-3">
-            {filtered.length === 0 && <div className="rounded-2xl border border-dashed border-stone-300 bg-white/50 p-12 text-center text-sm text-stone-400">Tiada order.</div>}
+            {filtered.length === 0 && <div className="rounded-2xl border border-dashed border-stone-300 bg-white/50 p-12 text-center text-sm text-stone-400">No orders yet.</div>}
             {filtered.map((o) => {
               const fwd = FORWARD[o.status];
               const canPay = PAYABLE.has(o.status);
@@ -504,7 +504,7 @@ function PosPageContent() {
                   <div className="flex flex-wrap items-center gap-3">
                     <p className="font-black text-ink">{o.order_no}</p>
                     <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-black uppercase text-stone-500">{o.type_label}</span>
-                    {o.table && <span className="text-xs font-bold text-brand-700">Meja {o.table.number}</span>}
+                    {o.table && <span className="text-xs font-bold text-rasa-600">Table {o.table.number}</span>}
                     <span className="text-xs text-stone-400">{timeOnly(o.created_at)}</span>
                     <span
                       className={`ml-auto rounded-full px-3 py-1 text-xs font-black ${
@@ -512,7 +512,7 @@ function PosPageContent() {
                           ? "bg-emerald-100 text-emerald-700"
                           : o.status === "cancelled" || o.status === "voided"
                             ? "bg-red-100 text-red-600"
-                            : "bg-brand-100 text-brand-700"
+                            : "bg-rasa-100 text-rasa-600"
                       }`}
                     >
                       {o.status_label}
@@ -527,12 +527,12 @@ function PosPageContent() {
                     )}
                     {cancel && (
                       <button onClick={() => void advance(o, "cancelled")} className="rounded-lg border border-red-200 px-4 py-1.5 text-xs font-black text-red-500 transition hover:bg-red-50">
-                        Batal order
+                        Cancel order
                       </button>
                     )}
                     {canPay && (
                       <button onClick={() => void openPay(o)} className="rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-black text-white shadow transition hover:bg-emerald-500">
-                        {o.type === "dine_in" && o.table ? "Bil meja & bayar" : "Bayar"}
+                        {o.type === "dine_in" && o.table ? "Table bill & pay" : "Pay"}
                       </button>
                     )}
                   </div>
@@ -548,10 +548,10 @@ function PosPageContent() {
         <div className="fixed inset-0 z-50 grid place-items-center bg-stone-900/50 p-4" onClick={() => !pay.busy && setPay(null)}>
           <div className="max-h-[85vh] w-full max-w-md overflow-auto rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <p className="text-lg font-black text-ink">
-              {pay.order ? `Bayar ${pay.order.order_no}` : `Bil meja ${pay.tableNumber ?? ""} 🧾`}
+              {pay.order ? `Pay ${pay.order.order_no}` : `Table bill ${pay.tableNumber ?? ""} 🧾`}
             </p>
             {!pay.bill ? (
-              <p className="py-6 text-center text-sm text-stone-400">Memuatkan bil…</p>
+              <p className="py-6 text-center text-sm text-stone-400">Loading bill…</p>
             ) : (
               <>
                 <div className="mt-3 space-y-2">
@@ -559,7 +559,7 @@ function PosPageContent() {
                     <div key={o.id} className="rounded-xl border border-stone-200 p-3">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-black text-ink">{o.order_no}</p>
-                        <p className="text-sm font-black text-brand-700">{rm(o.total)}</p>
+                        <p className="text-sm font-black text-rasa-600">{rm(o.total)}</p>
                       </div>
                       {(o.items ?? []).map((i) => (
                         <p key={i.id} className="text-xs text-stone-500">
@@ -570,26 +570,26 @@ function PosPageContent() {
                   ))}
                 </div>
                 <div className="mt-4 flex items-center justify-between border-t border-stone-200 pt-3">
-                  <p className="font-black text-ink">JUMLAH</p>
-                  <p className="text-xl font-black text-brand-700">{rm(pay.bill.bill_total)}</p>
+                  <p className="font-black text-ink">TOTAL</p>
+                  <p className="text-xl font-black text-rasa-600">{rm(pay.bill.bill_total)}</p>
                 </div>
 
-                <p className="mb-2 mt-4 text-xs font-black uppercase tracking-wide text-stone-500">Kaedah bayaran</p>
+                <p className="mb-2 mt-4 text-xs font-black uppercase tracking-wide text-stone-500">Payment method</p>
                 <div className="grid grid-cols-2 gap-2">
                   {METHODS.map((m) => (
                     <button
                       key={m.m}
                       onClick={() => setPay({ ...pay, method: m.m })}
                       className={`rounded-xl border px-3 py-3 text-sm font-black transition ${
-                        pay.method === m.m ? "border-brand-600 bg-brand-50 text-brand-800 ring-2 ring-brand-200" : "border-stone-200 text-stone-600 hover:border-brand-300"
+                        pay.method === m.m ? "border-rasa-500 bg-rasa-50 text-rasa-700 ring-2 ring-rasa-200" : "border-stone-200 text-stone-600 hover:border-rasa-300"
                       }`}
                     >
                       {m.label}
                     </button>
                   ))}
                 </div>
-                <button onClick={() => void confirmPay()} disabled={!pay.method || pay.busy} className="mt-4 w-full rounded-xl bg-brand-700 py-3 text-sm font-black text-white shadow transition hover:bg-brand-800 disabled:opacity-50">
-                  {pay.busy ? "Memproses…" : "Sahkan Bayaran"}
+                <button onClick={() => void confirmPay()} disabled={!pay.method || pay.busy} className="mt-4 w-full rounded-xl bg-rasa-600 py-3 text-sm font-black text-white shadow transition hover:bg-rasa-700 disabled:opacity-50">
+                  {pay.busy ? "Processing…" : "Confirm Payment"}
                 </button>
               </>
             )}

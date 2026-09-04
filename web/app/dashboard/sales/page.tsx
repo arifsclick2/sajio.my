@@ -8,7 +8,7 @@ import { api, PaymentInfo, PaymentsResponse } from "../../../lib/api";
 import { getToken } from "../../../lib/session";
 
 const inputCls =
-  "rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100";
+  "rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-rasa-500 focus:ring-4 focus:ring-rasa-100";
 
 function SalesPageContent() {
   const token = getToken();
@@ -30,7 +30,7 @@ function SalesPageContent() {
       const r = await api.paymentsIndex(token, { date, method: methodFilter || undefined, per_page: 100 });
       setData(r);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Gagal memuat jualan.");
+      setErr(e instanceof Error ? e.message : "Failed to load sales.");
     } finally {
       setLoading(false);
     }
@@ -63,13 +63,13 @@ function SalesPageContent() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-ink">Bil &amp; Jualan 💰</h1>
-          <p className="text-sm text-stone-500">Pembayaran direkod pada masa terima — bukan pemproses bayaran.</p>
+          <h1 className="text-2xl font-black tracking-tight text-ink">Sales 💰</h1>
+          <p className="text-sm text-stone-500">Payments are recorded at time of receipt — Sajio is not a payment processor.</p>
         </div>
         <div className="flex items-center gap-2">
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} max={new Date().toISOString().slice(0, 10)} />
           <button onClick={() => void load()} disabled={loading} className="rounded-xl bg-stone-800 px-4 py-2 text-sm font-black text-white transition hover:bg-stone-700 disabled:opacity-50">
-            {loading ? "…" : "Muat semula"}
+            {loading ? "…" : "Refresh"}
           </button>
         </div>
       </div>
@@ -80,28 +80,28 @@ function SalesPageContent() {
       {summary && (
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border border-stone-200 bg-white p-5">
-            <p className="text-xs font-black uppercase tracking-wide text-stone-400">Jumlah jualan</p>
-            <p className="mt-1 text-3xl font-black text-brand-700">{rm(summary.total_amount)}</p>
-            <p className="text-xs text-stone-400">{summary.count} pembayaran</p>
+            <p className="text-xs font-black uppercase tracking-wide text-stone-400">Total sales</p>
+            <p className="mt-1 text-3xl font-black text-rasa-600">{rm(summary.total_amount)}</p>
+            <p className="text-xs text-stone-400">{summary.count} payment{summary.count === 1 ? "" : "s"}</p>
           </div>
           <div className="rounded-2xl border border-stone-200 bg-white p-5 sm:col-span-2">
-            <p className="text-xs font-black uppercase tracking-wide text-stone-400">Mengikut kaedah</p>
+            <p className="text-xs font-black uppercase tracking-wide text-stone-400">By method</p>
             <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
               {summary.by_method.map((m) => (
                 <button
                   key={m.method}
                   onClick={() => setMethodFilter(methodFilter === m.method ? "" : m.method)}
                   className={`flex items-center justify-between rounded-xl border px-3 py-2 text-left transition ${
-                    methodFilter === m.method ? "border-brand-600 bg-brand-50 ring-2 ring-brand-200" : "border-stone-200 hover:border-brand-300"
+                    methodFilter === m.method ? "border-rasa-500 bg-rasa-50 ring-2 ring-rasa-200" : "border-stone-200 hover:border-rasa-300"
                   }`}
                 >
                   <span className="text-sm font-bold text-ink">{m.method_label}</span>
-                  <span className="text-sm font-black text-brand-700">
+                  <span className="text-sm font-black text-rasa-600">
                     {rm(m.amount)} <span className="text-[10px] font-bold text-stone-400">× {m.count}</span>
                   </span>
                 </button>
               ))}
-              {summary.by_method.length === 0 && <p className="col-span-full text-sm text-stone-400">Tiada pembayaran pada tarikh ini.</p>}
+              {summary.by_method.length === 0 && <p className="col-span-full text-sm text-stone-400">No payments on this date.</p>}
             </div>
           </div>
         </div>
@@ -110,7 +110,7 @@ function SalesPageContent() {
       {/* List */}
       <div className="rounded-2xl border border-stone-200 bg-white">
         {!data || data.data.length === 0 ? (
-          <p className="p-8 text-center text-sm text-stone-400">Tiada pembayaran direkod.</p>
+          <p className="p-8 text-center text-sm text-stone-400">No payments recorded.</p>
         ) : (
           <div className="divide-y divide-stone-100">
             {data.data.map((p) => (
@@ -123,8 +123,8 @@ function SalesPageContent() {
                 {p.reference && <span className="truncate text-xs text-stone-400">Ref: {p.reference}</span>}
                 <div className="ml-auto flex items-center gap-2">
                   {(p.order_id || p.table_session_id) && (
-                    <button onClick={() => void printPayment(p)} className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-bold text-stone-600 transition hover:border-brand-300 hover:text-brand-700">
-                      🖨️ Resit
+                    <button onClick={() => void printPayment(p)} className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-bold text-stone-600 transition hover:border-rasa-300 hover:text-rasa-600">
+                      🖨️ Receipt
                     </button>
                   )}
                 </div>

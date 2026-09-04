@@ -12,10 +12,10 @@ enum PaymentMethod: string
     public function label(): string
     {
         return match ($this) {
-            self::Cash => 'Tunai',
-            self::Card => 'Kad',
+            self::Cash => 'Cash',
+            self::Card => 'Card',
             self::Qr => 'QR / DuitNow',
-            self::Other => 'Lain-lain',
+            self::Other => 'Other',
         };
     }
 }

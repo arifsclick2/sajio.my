@@ -8,16 +8,16 @@ import { api, BillResponse, SessionInfo, TableInfo } from "../../../lib/api";
 import { getToken } from "../../../lib/session";
 
 const inputCls =
-  "rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100";
-const btnPrimary = "rounded-xl bg-brand-700 px-4 py-2 text-sm font-black text-white transition hover:bg-brand-800 disabled:opacity-50";
+  "rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-rasa-500 focus:ring-4 focus:ring-rasa-100";
+const btnPrimary = "rounded-xl bg-rasa-600 px-4 py-2 text-sm font-black text-white transition hover:bg-rasa-700 disabled:opacity-50";
 const METHODS = [
-  { m: "cash", label: "💵 Tunai" },
-  { m: "card", label: "💳 Kad" },
+  { m: "cash", label: "💵 Cash" },
+  { m: "card", label: "💳 Card" },
   { m: "qr", label: "📱 QR / DuitNow" },
-  { m: "other", label: "🔘 Lain-lain" },
+  { m: "other", label: "🔘 Other" },
 ];
 
-function MejaPageContent() {
+function TablesPageContent() {
   const { role } = useDashboard();
   const token = getToken();
 
@@ -43,7 +43,7 @@ function MejaPageContent() {
       setSessions(s.sessions);
       setErr(null);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Gagal memuat meja.");
+      setErr(e instanceof Error ? e.message : "Failed to load tables.");
     }
   }, [token]);
 
@@ -69,10 +69,10 @@ function MejaPageContent() {
       await api.createTable(token, { number: newNum.trim() });
       setNewNum("");
       setAddOpen(false);
-      flashOk("Meja ditambah.");
+      flashOk("Table added.");
       void load();
     } catch (e2) {
-      setErr(e2 instanceof Error ? e2.message : "Gagal.");
+      setErr(e2 instanceof Error ? e2.message : "Failed.");
     }
   }
 
@@ -82,41 +82,41 @@ function MejaPageContent() {
     const from = Number(bulkFrom);
     const to = Number(bulkTo);
     if (!from || !to || to < from) {
-      setErr("Julat tidak sah.");
+      setErr("Invalid range.");
       return;
     }
     try {
       const r = await api.bulkTables(token, { from, to });
       setBulkOpen(false);
-      flashOk(`${r.count} meja ditambah.`);
+      flashOk(`${r.count} tables added.`);
       void load();
     } catch (e2) {
-      setErr(e2 instanceof Error ? e2.message : "Gagal.");
+      setErr(e2 instanceof Error ? e2.message : "Failed.");
     }
   }
 
   async function removeTable(t: TableInfo) {
     if (!token) return;
-    if (!window.confirm(`Buang meja ${t.number}?`)) return;
+    if (!window.confirm(`Delete table ${t.number}?`)) return;
     try {
       await api.deleteTable(token, t.id);
-      flashOk("Meja dibuang.");
+      flashOk("Table deleted.");
       void load();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Gagal.");
+      setErr(e instanceof Error ? e.message : "Failed.");
     }
   }
 
   async function regenerate(t: TableInfo) {
     if (!token) return;
-    if (!window.confirm(`Tukar token QR meja ${t.number}? Kad QR lama tidak akan berfungsi lagi.`)) return;
+    if (!window.confirm(`Change QR token for table ${t.number}? The old QR card will no longer work.`)) return;
     try {
       const r = await api.regenerateTableToken(token, t.id);
       setErr(null);
-      flashOk(`Token baru meja ${r.table.number}: ${r.table.public_token}`);
+      flashOk(`New token for table ${r.table.number}: ${r.table.public_token}`);
       void load();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Gagal.");
+      setErr(e instanceof Error ? e.message : "Failed.");
     }
   }
 
@@ -127,7 +127,7 @@ function MejaPageContent() {
       const bill = await api.tableCurrent(token, tableId);
       setSettle((s) => (s ? { ...s, bill } : s));
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Gagal memuat bil.");
+      setErr(e instanceof Error ? e.message : "Failed to load bill.");
     }
   }
 
@@ -138,7 +138,7 @@ function MejaPageContent() {
     try {
       await api.settleSession(token, s.session.id, { method: s.method });
       setSettle(null);
-      flashOk("Bil diselesaikan. Meja kosong semula.");
+      flashOk("Bill settled. Table is now free.");
       void load();
       // Print session receipt
       try {
@@ -148,7 +148,7 @@ function MejaPageContent() {
         /* printing is best-effort */
       }
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Gagal menyelesaikan bil.");
+      setErr(e instanceof Error ? e.message : "Failed to settle the bill.");
       setSettle((prev) => (prev ? { ...prev, busy: false } : prev));
     }
   }
@@ -159,16 +159,16 @@ function MejaPageContent() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-ink">Meja 🪑</h1>
+          <h1 className="text-2xl font-black tracking-tight text-ink">Tables 🪑</h1>
           <p className="text-sm text-stone-500">
-            {tables.length} meja · {sessions.length} sesi terbuka
+            {tables.length} tables · {sessions.length} open sessions
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setBulkOpen(true)} className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-black text-stone-700 transition hover:border-brand-300 hover:text-brand-700">
-            + Banyak (1–N)
+          <button onClick={() => setBulkOpen(true)} className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-black text-stone-700 transition hover:border-rasa-300 hover:text-rasa-600">
+            + Bulk (1–N)
           </button>
-          <button onClick={() => setAddOpen(true)} className={btnPrimary}>+ Meja</button>
+          <button onClick={() => setAddOpen(true)} className={btnPrimary}>+ Table</button>
         </div>
       </div>
 
@@ -178,12 +178,12 @@ function MejaPageContent() {
       {addOpen && (
         <form onSubmit={addTable} className="flex flex-wrap items-end gap-3 rounded-2xl border border-stone-200 bg-white p-4">
           <div>
-            <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Nombor / nama meja</label>
+            <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Table number / name</label>
             <input required value={newNum} onChange={(e) => setNewNum(e.target.value)} className={inputCls} placeholder="cth: 5 atau Luar" autoFocus />
           </div>
           <div className="flex gap-2">
-            <button type="submit" className={btnPrimary}>Simpan</button>
-            <button type="button" onClick={() => setAddOpen(false)} className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-bold text-stone-500">Batal</button>
+            <button type="submit" className={btnPrimary}>Save</button>
+            <button type="button" onClick={() => setAddOpen(false)} className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-bold text-stone-500">Cancel</button>
           </div>
         </form>
       )}
@@ -191,23 +191,23 @@ function MejaPageContent() {
       {bulkOpen && (
         <form onSubmit={bulkAdd} className="flex flex-wrap items-end gap-3 rounded-2xl border border-stone-200 bg-white p-4">
           <div>
-            <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Dari meja</label>
+            <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">From table</label>
             <input type="number" min={1} value={bulkFrom} onChange={(e) => setBulkFrom(e.target.value)} className={`${inputCls} w-24`} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Ke meja</label>
+            <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">To table</label>
             <input type="number" min={1} value={bulkTo} onChange={(e) => setBulkTo(e.target.value)} className={`${inputCls} w-24`} />
           </div>
           <div className="flex gap-2">
-            <button type="submit" className={btnPrimary}>Cipta</button>
-            <button type="button" onClick={() => setBulkOpen(false)} className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-bold text-stone-500">Batal</button>
+            <button type="submit" className={btnPrimary}>Create</button>
+            <button type="button" onClick={() => setBulkOpen(false)} className="rounded-xl border border-stone-300 px-4 py-2 text-sm font-bold text-stone-500">Cancel</button>
           </div>
         </form>
       )}
 
       {tables.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-stone-300 bg-white/50 p-12 text-center text-sm text-stone-400">
-          Tiada meja lagi. Cipta satu atau guna <b>+ Banyak</b> untuk siapkan 1–N meja dengan cepat.
+          No tables yet. Create one, or use <b>+ Bulk</b> to set up tables 1–N in seconds.
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -215,30 +215,30 @@ function MejaPageContent() {
             const session = sessionFor(t.id);
             const open = Boolean(session);
             return (
-              <div key={t.id} className={`rounded-2xl border bg-white p-4 ${open ? "border-brand-300 ring-2 ring-brand-100" : "border-stone-200"}`}>
+              <div key={t.id} className={`rounded-2xl border bg-white p-4 ${open ? "border-rasa-300 ring-2 ring-rasa-100" : "border-stone-200"}`}>
                 <div className="flex items-center justify-between">
                   <p className="text-2xl font-black text-ink">{t.number}</p>
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${open ? "bg-brand-100 text-brand-700" : "bg-emerald-100 text-emerald-700"}`}>
-                    {open ? "Buka" : "Kosong"}
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${open ? "bg-rasa-100 text-rasa-600" : "bg-emerald-100 text-emerald-700"}`}>
+                    {open ? "Open" : "Free"}
                   </span>
                 </div>
-                <p className="mt-0.5 text-xs text-stone-400">{t.capacity ?? 2} tempat duduk</p>
+                <p className="mt-0.5 text-xs text-stone-400">{t.capacity ?? 2} tempat seats</p>
                 {open && session && (
                   <p className="mt-2 rounded-lg bg-stone-50 px-2 py-1 text-xs font-bold text-stone-600">
-                    Sesi sejak {timeOnly(session.opened_at)}
+                    Session since {timeOnly(session.opened_at)}
                   </p>
                 )}
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {open && session && (
-                    <button onClick={() => openSettleDialog(t.id, session)} className="rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-black text-white transition hover:bg-brand-800">
-                      Bil &amp; Bayar
+                    <button onClick={() => openSettleDialog(t.id, session)} className="rounded-lg bg-rasa-600 px-3 py-1.5 text-xs font-black text-white transition hover:bg-rasa-700">
+                      Bill & Pay
                     </button>
                   )}
-                  <button onClick={() => regenerate(t)} className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-bold text-stone-600 hover:border-brand-300 hover:text-brand-700">
+                  <button onClick={() => regenerate(t)} className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-bold text-stone-600 hover:border-rasa-300 hover:text-rasa-600">
                     QR
                   </button>
                   <button onClick={() => removeTable(t)} className="rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-bold text-stone-600 hover:border-red-300 hover:text-red-600">
-                    Buang
+                    Delete
                   </button>
                 </div>
               </div>
@@ -252,10 +252,10 @@ function MejaPageContent() {
         <div className="fixed inset-0 z-50 grid place-items-center bg-stone-900/50 p-4" onClick={() => !settle.busy && setSettle(null)}>
           <div className="max-h-[85vh] w-full max-w-md overflow-auto rounded-2xl border border-stone-200 bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <p className="text-lg font-black text-ink">
-              Bil meja {settle.session.table?.number} 🧾
+              Table bill {settle.session.table?.number} 🧾
             </p>
             {!settle.bill ? (
-              <p className="py-6 text-center text-sm text-stone-400">Memuatkan bil…</p>
+              <p className="py-6 text-center text-sm text-stone-400">Loading bill…</p>
             ) : (
               <>
                 <div className="mt-3 space-y-2">
@@ -263,7 +263,7 @@ function MejaPageContent() {
                     <div key={o.id} className="rounded-xl border border-stone-200 p-3">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-black text-ink">{o.order_no}</p>
-                        <p className="text-sm font-black text-brand-700">{rm(o.total)}</p>
+                        <p className="text-sm font-black text-rasa-600">{rm(o.total)}</p>
                       </div>
                       {(o.items ?? []).map((i) => (
                         <p key={i.id} className="text-xs text-stone-500">
@@ -274,18 +274,18 @@ function MejaPageContent() {
                   ))}
                 </div>
                 <div className="mt-4 flex items-center justify-between border-t border-stone-200 pt-3">
-                  <p className="font-black text-ink">JUMLAH</p>
-                  <p className="text-xl font-black text-brand-700">{rm(settle.bill.bill_total)}</p>
+                  <p className="font-black text-ink">TOTAL</p>
+                  <p className="text-xl font-black text-rasa-600">{rm(settle.bill.bill_total)}</p>
                 </div>
 
-                <p className="mb-2 mt-4 text-xs font-black uppercase tracking-wide text-stone-500">Kaedah bayaran</p>
+                <p className="mb-2 mt-4 text-xs font-black uppercase tracking-wide text-stone-500">Payment method</p>
                 <div className="grid grid-cols-2 gap-2">
                   {METHODS.map((m) => (
                     <button
                       key={m.m}
                       onClick={() => setSettle({ ...settle, method: m.m })}
                       className={`rounded-xl border px-3 py-3 text-sm font-black transition ${
-                        settle.method === m.m ? "border-brand-600 bg-brand-50 text-brand-800 ring-2 ring-brand-200" : "border-stone-200 text-stone-600 hover:border-brand-300"
+                        settle.method === m.m ? "border-rasa-500 bg-rasa-50 text-rasa-700 ring-2 ring-rasa-200" : "border-stone-200 text-stone-600 hover:border-rasa-300"
                       }`}
                     >
                       {m.label}
@@ -293,7 +293,7 @@ function MejaPageContent() {
                   ))}
                 </div>
                 <button onClick={confirmSettle} disabled={!settle.method || settle.busy} className={`${btnPrimary} mt-4 w-full py-3 text-base`}>
-                  {settle.busy ? "Menyelesaikan…" : "Sahkan Bayaran & Tutup Sesi"}
+                  {settle.busy ? "Menyelesaikan…" : "Confirm Payment & Close Session"}
                 </button>
               </>
             )}
@@ -304,10 +304,10 @@ function MejaPageContent() {
   );
 }
 
-export default function MejaPage() {
+export default function TablesPage() {
   return (
-    <AppShell active="meja">
-      <MejaPageContent />
+    <AppShell active="tables">
+      <TablesPageContent />
     </AppShell>
   );
 }
