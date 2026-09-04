@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AppShell, { useDashboard } from "../../components/dashboard/AppShell";
-import { api } from "../../lib/api";
+import { rm, timeOnly } from "../../components/dashboard/money";
+import { api, MoneyDashboard } from "../../lib/api";
 import { getToken } from "../../lib/session";
 
 interface Pkg {
@@ -21,6 +22,28 @@ function HomeContent() {
   const [plans, setPlans] = useState<Pkg[] | null>(null);
   const [plansShown, setPlansShown] = useState(false);
   const [subMsg, setSubMsg] = useState<string | null>(null);
+  const [money, setMoney] = useState<MoneyDashboard | null>(null);
+  const [moneyErr, setMoneyErr] = useState<string | null>(null);
+
+  const canManage = role === "owner" || role === "manager";
+
+  const loadMoney = useCallback(async () => {
+    if (!token) return;
+    try {
+      const r = await api.reportDashboard(token);
+      setMoney(r);
+      setMoneyErr(null);
+    } catch {
+      setMoneyErr("Could not load today's numbers.");
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (canManage) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void loadMoney();
+    }
+  }, [canManage, loadMoney]);
 
   async function handleClock(action: "in" | "out") {
     if (!token) return;
@@ -88,29 +111,119 @@ function HomeContent() {
       </div>
 
       {/* Quick actions — owner/manager: full suite. Staff: waiter order station. */}
-      {role === "owner" || role === "manager" ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <a href="/dashboard/pos" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
-            <p className="text-2xl">🧾</p>
-            <p className="mt-2 font-black text-ink group-hover:text-rasa-600">POS</p>
-            <p className="text-xs text-stone-500">Take orders & receive payments</p>
-          </a>
-          <a href="/dashboard/menu" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
-            <p className="text-2xl">🍽️</p>
-            <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Menu</p>
-            <p className="text-xs text-stone-500">Categories & products</p>
-          </a>
-          <a href="/dashboard/tables" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
-            <p className="text-2xl">🪑</p>
-            <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Tables</p>
-            <p className="text-xs text-stone-500">Manage tables & sessions</p>
-          </a>
-          <a href="/dashboard/sales" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
-            <p className="text-2xl">💰</p>
-            <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Sales</p>
-            <p className="text-xs text-stone-500">Receipts & daily sales</p>
-          </a>
-        </div>
+      {canManage ? (
+        <>
+          {/* Today's money at a glance (§20) */}
+          <div className="space-y-4">
+            {money && !moneyErr && (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="rounded-2xl border border-stone-200 bg-white p-5">
+                    <p className="text-xs font-black uppercase tracking-wide text-stone-400">Today&apos;s sales</p>
+                    <p className="mt-1 text-3xl font-black text-rasa-600">{rm(money.today.sales)}</p>
+                    <p className="text-xs text-stone-400">{money.today.payments_count} payment{money.today.payments_count === 1 ? "" : "s"} · {money.today.completed_count} order{money.today.completed_count === 1 ? "" : "s"} completed</p>
+                  </div>
+                  <div className="rounded-2xl border border-stone-200 bg-white p-5">
+                    <p className="text-xs font-black uppercase tracking-wide text-stone-400">Expenses today</p>
+                    <p className="mt-1 text-3xl font-black text-stone-800">{rm(money.today.expenses)}</p>
+                    <p className="text-xs text-stone-400">{money.today.expenses_count} record{money.today.expenses_count === 1 ? "" : "s"}</p>
+                  </div>
+                  <div className={`rounded-2xl border p-5 ${Number(money.net_position) < 0 ? "border-red-200 bg-red-50" : "border-emerald-200 bg-emerald-50"}`}>
+                    <p className="text-xs font-black uppercase tracking-wide text-stone-400">Net position today</p>
+                    <p className={`mt-1 text-3xl font-black ${Number(money.net_position) < 0 ? "text-red-600" : "text-emerald-700"}`}>{rm(money.net_position)}</p>
+                    <p className="text-xs text-stone-400">Sales − Expenses</p>
+                  </div>
+                  <div className="rounded-2xl border border-stone-200 bg-white p-5">
+                    <p className="text-xs font-black uppercase tracking-wide text-stone-400">Live right now</p>
+                    <div className="mt-2 flex items-center gap-4">
+                      <div>
+                        <p className="text-2xl font-black text-ink">{money.live.active_tables}</p>
+                        <p className="text-[11px] font-bold text-stone-400">tables open</p>
+                      </div>
+                      <div className="h-8 w-px bg-stone-100" />
+                      <div>
+                        <p className="text-2xl font-black text-rasa-600">{money.live.pending_orders}</p>
+                        <p className="text-[11px] font-bold text-stone-400">orders pending</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 lg:grid-cols-2">
+                  {/* Sales trend 7 days */}
+                  <div className="rounded-2xl border border-stone-200 bg-white p-5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-black text-ink">Sales — last 7 days</p>
+                      <a href="/dashboard/reports" className="text-xs font-black text-rasa-600 hover:underline">
+                        Full reports →
+                      </a>
+                    </div>
+                    <div className="mt-4 flex h-32 items-end gap-2">
+                      {money.trend.map((t) => {
+                        const max = Math.max(...money.trend.map((x) => Number(x.sales)), 0.01);
+                        const h = Math.max(4, (Number(t.sales) / max) * 100);
+                        return (
+                          <div key={t.date} className="flex flex-1 flex-col items-center gap-1" title={`${t.date}: ${rm(t.sales)}`}>
+                            <div className="flex w-full flex-1 items-end">
+                              <div className="w-full rounded-t-md bg-rasa-500/80 transition hover:bg-rasa-500" style={{ height: `${h}%` }} />
+                            </div>
+                            <p className="text-[10px] font-black text-stone-400">{t.label}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Recent orders */}
+                  <div className="rounded-2xl border border-stone-200 bg-white p-5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-black text-ink">Recent orders</p>
+                      <a href="/dashboard/pos" className="text-xs font-black text-rasa-600 hover:underline">
+                        Floor →
+                      </a>
+                    </div>
+                    <div className="mt-3 space-y-1.5">
+                      {money.recent_orders.length === 0 && <p className="py-6 text-center text-sm text-stone-400">No orders yet today.</p>}
+                      {money.recent_orders.slice(0, 6).map((o) => (
+                        <div key={o.id} className="flex items-center gap-3 rounded-xl border border-stone-100 px-3 py-2">
+                          <p className="font-black text-ink">{o.order_no}</p>
+                          {o.table && <span className="text-xs font-bold text-stone-400">T{o.table.number}</span>}
+                          <span className="ml-auto text-xs font-black text-stone-500">{timeOnly(o.created_at)}</span>
+                          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-black text-stone-500">{o.status_label}</span>
+                          <p className="w-16 text-right text-sm font-black text-rasa-600">{rm(o.total)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+            {moneyErr && !money && <p className="text-sm font-semibold text-stone-400">{moneyErr}</p>}
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <a href="/dashboard/pos" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
+              <p className="text-2xl">🧾</p>
+              <p className="mt-2 font-black text-ink group-hover:text-rasa-600">POS</p>
+              <p className="text-xs text-stone-500">Take orders & receive payments</p>
+            </a>
+            <a href="/dashboard/menu" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
+              <p className="text-2xl">🍽️</p>
+              <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Menu</p>
+              <p className="text-xs text-stone-500">Categories & products</p>
+            </a>
+            <a href="/dashboard/expenses" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
+              <p className="text-2xl">💸</p>
+              <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Expenses</p>
+              <p className="text-xs text-stone-500">Record money out</p>
+            </a>
+            <a href="/dashboard/reports" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
+              <p className="text-2xl">📈</p>
+              <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Reports</p>
+              <p className="text-xs text-stone-500">Daily, product & profit</p>
+            </a>
+          </div>
+        </>
       ) : (
         /* Staff / waiter — their whole job is taking orders at tables. */
         <div className="rounded-2xl border border-rasa-200 bg-white p-6 shadow-sm">

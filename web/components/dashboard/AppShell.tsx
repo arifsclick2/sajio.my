@@ -40,6 +40,8 @@ const NAV: { key: string; label: string; icon: string; href: string; roles?: Rol
   { key: "tables", label: "Tables", icon: "▤", href: "/dashboard/tables", roles: ["owner", "manager"] },
   { key: "staff", label: "Staff", icon: "☺", href: "/dashboard/staff", roles: ["owner", "manager"] },
   { key: "sales", label: "Sales", icon: "₨", href: "/dashboard/sales", roles: ["owner", "manager"] },
+  { key: "reports", label: "Reports", icon: "📈", href: "/dashboard/reports", roles: ["owner", "manager"] },
+  { key: "expenses", label: "Expenses", icon: "💸", href: "/dashboard/expenses", roles: ["owner", "manager"] },
 ];
 
 function Logo({ light = false }: { light?: boolean }) {

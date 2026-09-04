@@ -624,6 +624,107 @@ export const api = {
       body: JSON.stringify(data),
     });
   },
+
+  /* ---- Money: expenses + reports (owner/manager, §19-21) ---- */
+
+  expenseCategories(token: string) {
+    return request<{ categories: ExpenseCategoryInfo[] }>("/api/v1/expense-categories", {
+      headers: authHeaders(token),
+    });
+  },
+
+  createExpenseCategory(token: string, data: { name: string; description?: string; sort_order?: number; is_active?: boolean }) {
+    return request<{ category: ExpenseCategoryInfo }>("/api/v1/expense-categories", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateExpenseCategory(
+    token: string,
+    id: number,
+    data: { name?: string; description?: string; sort_order?: number; is_active?: boolean },
+  ) {
+    return request<{ category: ExpenseCategoryInfo }>(`/api/v1/expense-categories/${id}`, {
+      method: "PUT",
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteExpenseCategory(token: string, id: number) {
+    return request<{ message: string }>(`/api/v1/expense-categories/${id}`, {
+      method: "DELETE",
+      headers: authHeaders(token),
+    });
+  },
+
+  expensesIndex(token: string, params?: Query) {
+    return request<ExpenseListResponse>(`/api/v1/expenses${qs(params)}`, { headers: authHeaders(token) });
+  },
+
+  createExpense(
+    token: string,
+    data: { category_id?: number; description: string; amount: number; expense_date: string; payment_method?: string; note?: string },
+  ) {
+    return request<{ expense: ExpenseInfo }>("/api/v1/expenses", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateExpense(
+    token: string,
+    id: number,
+    data: { category_id?: number | null; description?: string; amount?: number; expense_date?: string; payment_method?: string; note?: string },
+  ) {
+    return request<{ expense: ExpenseInfo }>(`/api/v1/expenses/${id}`, {
+      method: "PUT",
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteExpense(token: string, id: number) {
+    return request<{ message: string }>(`/api/v1/expenses/${id}`, {
+      method: "DELETE",
+      headers: authHeaders(token),
+    });
+  },
+
+  reportDashboard(token: string, params?: Query) {
+    return request<MoneyDashboard>(`/api/v1/reports/dashboard${qs(params)}`, { headers: authHeaders(token) });
+  },
+
+  reportSummary(token: string, params?: Query) {
+    return request<MoneySummary>(`/api/v1/reports/summary${qs(params)}`, { headers: authHeaders(token) });
+  },
+
+  reportSales(token: string, params?: Query) {
+    return request<SalesSeries>(`/api/v1/reports/sales${qs(params)}`, { headers: authHeaders(token) });
+  },
+
+  reportProducts(token: string, params?: Query) {
+    return request<{ products: ProductSalesRow[] }>(`/api/v1/reports/products${qs(params)}`, { headers: authHeaders(token) });
+  },
+
+  reportCategories(token: string, params?: Query) {
+    return request<{ categories: CategorySalesRow[] }>(`/api/v1/reports/categories${qs(params)}`, { headers: authHeaders(token) });
+  },
+
+  reportStaff(token: string, params?: Query) {
+    return request<{ staff: StaffSalesRow[] }>(`/api/v1/reports/staff${qs(params)}`, { headers: authHeaders(token) });
+  },
+
+  reportHours(token: string, params?: Query) {
+    return request<{ hours: HourRow[] }>(`/api/v1/reports/hours${qs(params)}`, { headers: authHeaders(token) });
+  },
+
+  reportAdvanced(token: string, params?: Query) {
+    return request<AdvancedReport>(`/api/v1/reports/advanced${qs(params)}`, { headers: authHeaders(token) });
+  },
 };
 
 /* ---- Public customer-menu types (§15) ---- */
@@ -658,4 +759,98 @@ export interface PublicMenuResponse {
 export function publicOrderUrl(tableToken: string): string {
   const app = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.sajio.my";
   return `${app}/order/${encodeURIComponent(tableToken)}`;
+}
+
+/* ---- Money & reports types (§19-21) ---- */
+
+export interface ExpenseCategoryInfo {
+  id: number;
+  name: string;
+  description?: string | null;
+  sort_order?: number;
+  is_active: boolean;
+}
+
+export interface ExpenseInfo {
+  id: number;
+  category_id?: number | null;
+  category?: { id: number; name: string } | null;
+  description: string;
+  amount: string;
+  expense_date: string;
+  payment_method?: string | null;
+  note?: string | null;
+  created_by?: { id: number; name: string } | null;
+  created_at?: string | null;
+}
+
+export interface ExpenseListResponse {
+  data: ExpenseInfo[];
+  meta: { current_page: number; last_page: number; total: number };
+  summary: {
+    count: number;
+    total_amount: string;
+    by_category: { category: string; count: number; amount: string }[];
+  };
+}
+
+export interface MoneyDashboard {
+  date: string;
+  today: { sales: string; payments_count: number; orders_count: number; completed_count: number; expenses: string; expenses_count: number };
+  net_position: string;
+  live: { active_tables: number; pending_orders: number };
+  payment_breakdown: { method: string; method_label: string; count: number; amount: string }[];
+  recent_orders: OrderInfo[];
+  trend: { date: string; label: string; sales: string; orders: number }[];
+}
+
+export interface MoneySummary {
+  range: { from: string; to: string };
+  sales: { total: string; payments_count: number; by_method: { method: string; method_label: string; count: number; amount: string }[] };
+  orders: { completed_count: number; gross: string; discounts: string; tax: string; net: string };
+  expenses: { total: string; count: number };
+  net_position: string;
+}
+
+export interface SalesSeries {
+  period: "daily" | "weekly" | "monthly";
+  range: { from: string; to: string };
+  series: { label: string; sales: string; payments: number; orders: number }[];
+}
+
+export interface ProductSalesRow {
+  name: string;
+  product_id: number | null;
+  quantity: number;
+  revenue: string;
+}
+
+export interface CategorySalesRow {
+  category: string;
+  quantity: number;
+  revenue: string;
+}
+
+export interface StaffSalesRow {
+  staff_id: number | null;
+  name: string;
+  orders: number;
+  total: string;
+}
+
+export interface HourRow {
+  hour: number;
+  label: string;
+  sales: string;
+  count: number;
+}
+
+export interface AdvancedReport {
+  range: { from: string; to: string };
+  discounts: { total_discount: string; discounted_orders: number };
+  void_refunds: { count: number; amount: string };
+  completed_orders: number;
+  net_sales: string;
+  total_expenses: string;
+  profit: string;
 }

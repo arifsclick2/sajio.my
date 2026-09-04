@@ -123,6 +123,16 @@ class Restaurant extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function expenseCategories(): HasMany
+    {
+        return $this->hasMany(ExpenseCategory::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
     public function activeSubscription(): HasOne
     {
         return $this->hasOne(Subscription::class)
@@ -223,6 +233,33 @@ class Restaurant extends Model
         // Not subscribed (e.g. trial) -> enabled.
         if (! $package) {
             return true;
+        }
+
+        return in_array($package->slug, ['premium', 'pro'], true);
+    }
+
+    /**
+     * Advanced reports (§21 — staff sales, hourly sales, discount / void /
+     * profit summaries) — available on trial (all features) and on plans
+     * whose package limit `advanced_reports` is enabled (Premium/Pro).
+     * Basic has only the basic reports; locked restaurants excluded.
+     */
+    public function advancedReportsEnabled(): bool
+    {
+        if (! $this->canOperate()) {
+            return false;
+        }
+
+        $package = $this->currentPackage();
+
+        // Not subscribed (e.g. trial) -> enabled.
+        if (! $package) {
+            return true;
+        }
+
+        $limit = $package->limits;
+        if ($limit && $limit->advanced_reports !== null) {
+            return (bool) $limit->advanced_reports;
         }
 
         return in_array($package->slug, ['premium', 'pro'], true);

@@ -5,15 +5,18 @@ use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\CustomerOrderController;
+use App\Http\Controllers\Api\V1\ExpenseCategoryController;
+use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReceiptController;
+use App\Http\Controllers\Api\V1\RegistrationController;
+use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\RestaurantTableController;
 use App\Http\Controllers\Api\V1\TableSessionController;
 use App\Http\Controllers\Api\V1\TableTagController;
-use App\Http\Controllers\Api\V1\RegistrationController;
 use App\Http\Controllers\Api\V1\ShiftController;
 use App\Http\Controllers\Api\V1\StaffController;
 use App\Http\Controllers\Api\Admin\CouponAdminController;
@@ -128,6 +131,28 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/profile', [ProfileController::class, 'show']);
             Route::put('/profile/settings', [ProfileController::class, 'updateSettings']);
             Route::put('/profile/branding', [ProfileController::class, 'updateBranding']);
+        });
+
+        // Money: expenses + reports (§19–21, owner/manager)
+        Route::middleware('role:owner,manager')->group(function (): void {
+            Route::get('/expense-categories', [ExpenseCategoryController::class, 'index']);
+            Route::post('/expense-categories', [ExpenseCategoryController::class, 'store']);
+            Route::put('/expense-categories/{category}', [ExpenseCategoryController::class, 'update']);
+            Route::delete('/expense-categories/{category}', [ExpenseCategoryController::class, 'destroy']);
+
+            Route::get('/expenses', [ExpenseController::class, 'index']);
+            Route::post('/expenses', [ExpenseController::class, 'store']);
+            Route::put('/expenses/{expense}', [ExpenseController::class, 'update']);
+            Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy']);
+
+            Route::get('/reports/dashboard', [ReportController::class, 'dashboard']);
+            Route::get('/reports/summary', [ReportController::class, 'summary']);
+            Route::get('/reports/sales', [ReportController::class, 'sales']);
+            Route::get('/reports/products', [ReportController::class, 'products']);
+            Route::get('/reports/categories', [ReportController::class, 'categories']);
+            Route::get('/reports/staff', [ReportController::class, 'staff']);
+            Route::get('/reports/hours', [ReportController::class, 'hours']);
+            Route::get('/reports/advanced', [ReportController::class, 'advanced']);
         });
 
         // ---- Super Admin ----
