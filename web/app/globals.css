@@ -23,6 +23,19 @@
   --color-gold-400: #fbbf24;
   --color-gold-500: #f59e0b;
   --color-gold-600: #d97706;
+
+  /* Sajio brand red (landing) — #E82D4B */
+  --color-rasa-50: #fef2f4;
+  --color-rasa-100: #fde5e9;
+  --color-rasa-200: #fbcbd3;
+  --color-rasa-300: #f8a3b1;
+  --color-rasa-400: #f36d84;
+  --color-rasa-500: #e82d4b;
+  --color-rasa-600: #ce1f3e;
+  --color-rasa-700: #ac1832;
+  --color-rasa-800: #8d172d;
+  --color-rasa-900: #77172a;
+  --color-rasa-950: #44060f;
 }
 
 :root {

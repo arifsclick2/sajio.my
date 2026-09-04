@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: "%s · Sajio",
   },
   description:
-    "The simple POS, ordering and table management platform for Malaysian restaurants, cafes and warungs. Jalankan restoran anda dengan lebih mudah — 14-day free trial, no credit card required.",
+    "The simple POS, ordering and table-management platform for Malaysian restaurants, cafes and warungs. Take orders, get paid and run daily sales in one fast system. 14-day free trial, no credit card required.",
   openGraph: {
     type: "website",
     locale: "en_MY",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#faf6ee",
+  themeColor: "#e82d4b",
 };
 
 export default function RootLayout({
