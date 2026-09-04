@@ -200,29 +200,6 @@ function HomeContent() {
             )}
             {moneyErr && !money && <p className="text-sm font-semibold text-stone-400">{moneyErr}</p>}
           </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <a href="/dashboard/pos" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
-              <p className="text-2xl">🧾</p>
-              <p className="mt-2 font-black text-ink group-hover:text-rasa-600">POS</p>
-              <p className="text-xs text-stone-500">Take orders & receive payments</p>
-            </a>
-            <a href="/dashboard/menu" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
-              <p className="text-2xl">🍽️</p>
-              <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Menu</p>
-              <p className="text-xs text-stone-500">Categories & products</p>
-            </a>
-            <a href="/dashboard/expenses" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
-              <p className="text-2xl">💸</p>
-              <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Expenses</p>
-              <p className="text-xs text-stone-500">Record money out</p>
-            </a>
-            <a href="/dashboard/reports" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
-              <p className="text-2xl">📈</p>
-              <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Reports</p>
-              <p className="text-xs text-stone-500">Daily, product & profit</p>
-            </a>
-          </div>
         </>
       ) : (
         /* Staff / waiter — their whole job is taking orders at tables. */
@@ -289,30 +266,6 @@ function HomeContent() {
         <div className="rounded-2xl border-2 border-rasa-200 bg-rasa-50 p-6">
           <p className="text-lg font-black text-rasa-600">Your trial has ended</p>
           <p className="mt-1 text-sm text-rasa-700">To keep selling, choose a plan below. Your restaurant data is safe.</p>
-        </div>
-      )}
-
-      {/* Onboarding checklist (owner, not locked) */}
-      {role === "owner" && !billing?.needs_subscription && (
-        <div className="rounded-2xl border border-stone-200 bg-white p-6">
-          <p className="font-black text-ink">Restaurant setup</p>
-          <p className="text-sm text-stone-500">Complete these steps to start taking orders.</p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {[
-              { t: "Menu & categories", d: "Add your food & drinks", href: "/dashboard/menu" },
-              { t: "Tables", d: "Create tables for dine-in", href: "/dashboard/tables" },
-              { t: "POS", d: "Start taking orders & payments", href: "/dashboard/pos" },
-              { t: "Sales", d: "View receipts & daily sales", href: "/dashboard/sales" },
-            ].map((s) => (
-              <a key={s.t} href={s.href} className="flex items-start gap-3 rounded-xl border border-stone-200 p-4 transition hover:border-rasa-300">
-                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-rasa-50 text-xs font-black text-rasa-500 ring-1 ring-rasa-100">→</span>
-                <div>
-                  <p className="text-sm font-black text-ink">{s.t}</p>
-                  <p className="text-xs text-stone-500">{s.d}</p>
-                </div>
-              </a>
-            ))}
-          </div>
         </div>
       )}
 

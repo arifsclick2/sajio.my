@@ -42,7 +42,6 @@ const NAV: { key: string; label: string; icon: string; href: string; roles?: Rol
   { key: "sales", label: "Sales", icon: "₨", href: "/dashboard/sales", roles: ["owner", "manager"] },
   { key: "reports", label: "Reports", icon: "📈", href: "/dashboard/reports", roles: ["owner", "manager"] },
   { key: "expenses", label: "Expenses", icon: "💸", href: "/dashboard/expenses", roles: ["owner", "manager"] },
-  { key: "settings", label: "Settings", icon: "⚙", href: "/dashboard/settings", roles: ["owner", "manager"] },
 ];
 
 function Logo({ light = false }: { light?: boolean }) {
@@ -62,6 +61,7 @@ export default function AppShell({ active, children }: { active: string; childre
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [attendance, setAttendance] = useState<AttendanceChip | null>(null);
   const [clockMsg, setClockMsg] = useState<string | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     const token = getToken();
@@ -98,6 +98,25 @@ export default function AppShell({ active, children }: { active: string; childre
 
   const role = user?.role as Role;
   const nav = NAV.filter((n) => !n.roles || (role && n.roles.includes(role)));
+
+  const initials =
+    (user?.name
+      ? user.name.split(" ").slice(0, 2).map((p) => p[0]).join("").toUpperCase()
+      : (user?.email ?? "?")[0]?.toUpperCase()) ?? "?";
+  const roleLabel = role === "owner" ? "Owner" : role === "manager" ? "Manager" : role === "staff" ? "Staff" : "";
+
+  // Close the profile menu on outside click / Escape.
+  useEffect(() => {
+    if (!profileOpen) return;
+    const close = () => setProfileOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
+    document.addEventListener("click", close);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", close);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [profileOpen]);
 
   async function handleClock(action: "in" | "out") {
     const token = getToken();
@@ -139,19 +158,8 @@ export default function AppShell({ active, children }: { active: string; childre
           <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:px-6">
             <Logo />
 
-            {/* Restaurant identity */}
-            <div className="hidden min-w-0 md:block">
-              <p className="truncate text-sm font-black leading-tight text-ink">{restaurant?.name ?? user?.email ?? ""}</p>
-              {restaurant && <p className="truncate text-[11px] font-medium leading-tight text-stone-400">{restaurant.subdomain}.sajio.my</p>}
-            </div>
-
-            {/* Inline role pill */}
-            <span className="hidden rounded-full bg-rasa-50 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-rasa-600 ring-1 ring-rasa-100 sm:inline-block">
-              {role === "owner" ? "Owner" : role === "manager" ? "Manager" : role === "staff" ? "Staff" : role ?? ""}
-            </span>
-
             {/* Primary navigation in the header */}
-            <nav className="ml-auto flex items-center gap-1 overflow-x-auto rounded-2xl bg-stone-100/80 p-1">
+            <nav className="ml-2 flex flex-1 items-center gap-1 overflow-x-auto rounded-2xl bg-stone-100/80 p-1">
               {nav.map((n) => {
                 const on = active === n.key;
                 const label = n.staffLabel && role === "staff" ? n.staffLabel : n.label;
@@ -171,7 +179,7 @@ export default function AppShell({ active, children }: { active: string; childre
             </nav>
 
             {/* Status chips + actions */}
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               {billing && role === "owner" && (
                 billing.package ? (
                   <span className="hidden rounded-full bg-ink px-3 py-1 text-xs font-black text-white lg:inline-block">{billing.package.name}</span>
@@ -194,6 +202,64 @@ export default function AppShell({ active, children }: { active: string; childre
                   {attendance.on_duty ? "Clock out" : "Clock in"}
                 </button>
               )}
+
+              {/* Profile */}
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setProfileOpen((o) => !o);
+                  }}
+                  aria-label="Profile"
+                  className={`flex items-center gap-1.5 rounded-xl p-1 pr-2 transition hover:bg-stone-100 ${profileOpen ? "bg-stone-100" : ""}`}
+                >
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-rasa-500 text-xs font-black text-white">{initials}</span>
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5 text-stone-400">
+                    <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.06l3.71-3.83a.75.75 0 1 1 1.08 1.04l-4.25 4.39a.75.75 0 0 1-1.08 0L5.21 8.27a.75.75 0 0 1 .02-1.06Z" clipRule="evenodd" />
+                  </svg>
+                </button>
+
+                {profileOpen && (
+                  <div
+                    className="absolute right-0 top-11 z-50 w-64 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="border-b border-stone-100 px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-rasa-500 text-sm font-black text-white">{initials}</span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-black text-ink">{user?.name || user?.email}</p>
+                          {roleLabel && (
+                            <span className="mt-0.5 inline-block rounded-full bg-rasa-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-rasa-600 ring-1 ring-rasa-100">
+                              {roleLabel}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {restaurant && (
+                      <div className="border-b border-stone-100 px-4 py-3">
+                        <p className="text-xs font-black uppercase tracking-wide text-stone-400">Restaurant</p>
+                        <p className="truncate text-sm font-black text-ink">{restaurant.name}</p>
+                        <p className="truncate text-xs font-medium text-stone-500">{restaurant.subdomain}.sajio.my</p>
+                      </div>
+                    )}
+
+                    <div className="p-1.5">
+                      {(role === "owner" || role === "manager") && (
+                        <Link
+                          href="/dashboard/settings"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-stone-600 transition hover:bg-stone-100 hover:text-rasa-600"
+                        >
+                          ⚙ Settings
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <button onClick={handleLogout} className="rounded-xl border border-stone-300 bg-white px-3 py-1.5 text-xs font-bold text-stone-600 transition hover:border-rasa-300 hover:text-rasa-600">
                 Log out
