@@ -343,6 +343,9 @@ class StaffAttendanceTest extends TestCase
 
     public function test_tenant_isolation_between_restaurants(): void
     {
+        // Pin "now" to a mid-day time so the day shift (09:00-17:00) is running.
+        $this->travelTo(CarbonImmutable::parse('2026-09-04 12:00', 'UTC'));
+
         $r1 = $this->restaurant();
         $r2 = $this->restaurant();
         Shift::factory()->create(['restaurant_id' => $r1->id, 'start_time' => '09:00:00', 'end_time' => '17:00:00']);

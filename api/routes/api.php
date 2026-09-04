@@ -7,6 +7,9 @@ use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\RegistrationController;
 use App\Http\Controllers\Api\V1\ShiftController;
 use App\Http\Controllers\Api\V1\StaffController;
+use App\Http\Controllers\Api\Admin\CouponAdminController;
+use App\Http\Controllers\Api\Admin\OverviewController;
+use App\Http\Controllers\Api\Admin\PackageAdminController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', [HealthController::class, 'index']);
@@ -51,6 +54,23 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/staff', [StaffController::class, 'index']);
             Route::post('/staff', [StaffController::class, 'store']);
             Route::put('/staff/{staff}', [StaffController::class, 'update']);
+        });
+
+        // ---- Super Admin ----
+        Route::middleware('role:super_admin')->prefix('admin')->group(function (): void {
+            Route::get('/stats', [OverviewController::class, 'stats']);
+            Route::get('/restaurants', [OverviewController::class, 'restaurants']);
+            Route::put('/restaurants/{restaurant}/status', [OverviewController::class, 'setRestaurantStatus']);
+            Route::post('/packages/sync-stripe', [OverviewController::class, 'syncPackagesToStripe']);
+
+            Route::get('/packages', [PackageAdminController::class, 'index']);
+            Route::post('/packages', [PackageAdminController::class, 'store']);
+            Route::put('/packages/{package}', [PackageAdminController::class, 'update']);
+
+            Route::get('/coupons', [CouponAdminController::class, 'index']);
+            Route::post('/coupons', [CouponAdminController::class, 'store']);
+            Route::put('/coupons/{coupon}', [CouponAdminController::class, 'update']);
+            Route::delete('/coupons/{coupon}', [CouponAdminController::class, 'destroy']);
         });
     });
 });
