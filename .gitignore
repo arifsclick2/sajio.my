@@ -1,0 +1,15 @@
+# ============================================================
+# Sajio.my — monorepo root
+# Laravel API (api/) + Next.js web (web/). Each has its own
+# .gitignore for framework artifacts; this covers repo-root files.
+# ============================================================
+
+# Legacy static placeholder (public/index.php) — was served by nginx
+# before Next.js took over sajio.my. Kept on disk, not tracked.
+/public/
+
+# OS / editor noise
+.DS_Store
+*.swp
+.idea/
+.vscode/
