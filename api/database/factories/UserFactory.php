@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\UserRole;
+use App\Models\Restaurant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -30,7 +32,40 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'role' => UserRole::Owner,
         ];
+    }
+
+    /**
+     * Assign the user to a restaurant.
+     */
+    public function restaurant(Restaurant|int $restaurant): static
+    {
+        $restaurantId = $restaurant instanceof Restaurant ? $restaurant->id : $restaurant;
+
+        return $this->state(fn (array $attributes) => [
+            'restaurant_id' => $restaurantId,
+        ]);
+    }
+
+    /**
+     * Set the user's role.
+     */
+    public function role(UserRole $role): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => $role,
+        ]);
+    }
+
+    /**
+     * A restaurant owner (has their own restaurant).
+     */
+    public function owner(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::Owner,
+        ]);
     }
 
     /**
