@@ -45,6 +45,7 @@ function MenuPageContent() {
     name: string;
     price: string;
     description: string;
+    image_url: string;
     available: boolean;
     is_active: boolean;
   }>(null);
@@ -117,6 +118,7 @@ function MenuPageContent() {
       name: "",
       price: "",
       description: "",
+      image_url: "",
       available: true,
       is_active: true,
     });
@@ -136,6 +138,7 @@ function MenuPageContent() {
         name: prodModal.name,
         price,
         description: prodModal.description || undefined,
+        image_url: prodModal.image_url?.trim() || undefined,
         available: prodModal.available,
         is_active: prodModal.is_active,
       };
@@ -240,7 +243,11 @@ function MenuPageContent() {
           )}
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {shown.map((p) => (
-              <div key={p.id} className={`rounded-2xl border bg-white p-4 ${p.available ? "border-stone-200" : "border-stone-200 opacity-60"}`}>
+              <div key={p.id} className={`overflow-hidden rounded-2xl border bg-white ${p.available ? "border-stone-200" : "border-stone-200 opacity-60"}`}>
+                {p.image_url && (
+                  <img src={p.image_url} alt={p.name} className="h-28 w-full object-cover" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
+                )}
+                <div className="p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate font-black text-ink">{p.name}</p>
@@ -249,6 +256,7 @@ function MenuPageContent() {
                   <p className="shrink-0 font-black text-rasa-600">{rm(p.price)}</p>
                 </div>
                 {p.description && <p className="mt-1 line-clamp-2 text-xs text-stone-400">{p.description}</p>}
+
                 <div className="mt-3 flex items-center justify-between gap-2">
                   <button
                     onClick={() => toggleProduct(p)}
@@ -265,6 +273,7 @@ function MenuPageContent() {
                           name: p.name,
                           price: p.price,
                           description: p.description ?? "",
+                          image_url: p.image_url ?? "",
                           available: p.available,
                           is_active: p.is_active,
                         })
@@ -277,6 +286,7 @@ function MenuPageContent() {
                       Delete
                     </button>
                   </div>
+                </div>
                 </div>
               </div>
             ))}
@@ -322,8 +332,13 @@ function MenuPageContent() {
               <input required type="number" step="0.05" min="0" value={prodModal.price} onChange={(e) => setProdModal({ ...prodModal, price: e.target.value })} className={inputCls} placeholder="12.50" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Penerangan</label>
+              <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Description</label>
               <textarea value={prodModal.description} onChange={(e) => setProdModal({ ...prodModal, description: e.target.value })} className={inputCls} rows={2} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Image URL</label>
+              <input value={prodModal.image_url} onChange={(e) => setProdModal({ ...prodModal, image_url: e.target.value })} className={inputCls} placeholder="https://…/food.jpg" />
+              {prodModal.image_url && <img src={prodModal.image_url} alt="preview" className="mt-2 h-20 w-20 rounded-xl object-cover ring-1 ring-stone-200" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />}
             </div>
             <label className="flex items-center gap-2 text-sm font-bold text-stone-700">
               <input type="checkbox" checked={prodModal.available} onChange={(e) => setProdModal({ ...prodModal, available: e.target.checked })} />

@@ -88,6 +88,19 @@ export interface TableInfo {
   public_token?: string;
 }
 
+export interface StaffInfo {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  role_label: string;
+  staff_code?: string | null;
+  position?: string | null;
+  phone?: string | null;
+  joined_at?: string | null;
+  is_active: boolean;
+}
+
 export interface SessionInfo {
   id: number;
   status: "open" | "closed";
@@ -250,6 +263,7 @@ export interface ProductInput {
   name: string;
   price: number;
   description?: string;
+  image_url?: string;
   is_active?: boolean;
   available?: boolean;
   sku?: string;
@@ -444,6 +458,35 @@ export const api = {
 
   updateTable(token: string, id: number, data: { number?: string; capacity?: number; is_active?: boolean }) {
     return request<{ table: TableInfo }>(`/api/v1/tables/${id}`, {
+      method: "PUT",
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    });
+  },
+
+  /* ---- Staff (owner/manager) ---- */
+
+  staffIndex(token: string) {
+    return request<{ staff: StaffInfo[] }>("/api/v1/staff", { headers: authHeaders(token) });
+  },
+
+  createStaff(
+    token: string,
+    data: { name: string; email: string; role: "staff" | "manager"; position?: string; phone?: string },
+  ) {
+    return request<{ staff: StaffInfo }>("/api/v1/staff", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateStaff(
+    token: string,
+    id: number,
+    data: { name?: string; role?: "staff" | "manager"; position?: string; phone?: string; is_active?: boolean },
+  ) {
+    return request<{ staff: StaffInfo }>(`/api/v1/staff/${id}`, {
       method: "PUT",
       headers: authHeaders(token),
       body: JSON.stringify(data),

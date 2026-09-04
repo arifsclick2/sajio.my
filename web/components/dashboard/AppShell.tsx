@@ -37,6 +37,7 @@ const NAV: { key: string; label: string; icon: string; href: string; roles?: Rol
   { key: "pos", label: "POS", icon: "◧", href: "/dashboard/pos" },
   { key: "menu", label: "Menu", icon: "☰", href: "/dashboard/menu", roles: ["owner", "manager"] },
   { key: "tables", label: "Tables", icon: "▤", href: "/dashboard/tables", roles: ["owner", "manager"] },
+  { key: "staff", label: "Staff", icon: "☺", href: "/dashboard/staff", roles: ["owner", "manager"] },
   { key: "sales", label: "Sales", icon: "₨", href: "/dashboard/sales" },
 ];
 
