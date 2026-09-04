@@ -87,29 +87,66 @@ function HomeContent() {
         )}
       </div>
 
-      {/* Quick actions */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <a href="/dashboard/pos" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
-          <p className="text-2xl">🧾</p>
-          <p className="mt-2 font-black text-ink group-hover:text-rasa-600">POS</p>
-          <p className="text-xs text-stone-500">Take orders &amp; receive payments</p>
-        </a>
-        <a href="/dashboard/menu" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
-          <p className="text-2xl">🍽️</p>
-          <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Menu</p>
-          <p className="text-xs text-stone-500">Categories &amp; products</p>
-        </a>
-        <a href="/dashboard/tables" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
-          <p className="text-2xl">🪑</p>
-          <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Tables</p>
-          <p className="text-xs text-stone-500">Manage tables &amp; sessions</p>
-        </a>
-        <a href="/dashboard/sales" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
-          <p className="text-2xl">💰</p>
-          <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Sales</p>
-          <p className="text-xs text-stone-500">Receipts &amp; daily sales</p>
-        </a>
-      </div>
+      {/* Quick actions — owner/manager: full suite. Staff: waiter order station. */}
+      {role === "owner" || role === "manager" ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <a href="/dashboard/pos" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
+            <p className="text-2xl">🧾</p>
+            <p className="mt-2 font-black text-ink group-hover:text-rasa-600">POS</p>
+            <p className="text-xs text-stone-500">Take orders & receive payments</p>
+          </a>
+          <a href="/dashboard/menu" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
+            <p className="text-2xl">🍽️</p>
+            <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Menu</p>
+            <p className="text-xs text-stone-500">Categories & products</p>
+          </a>
+          <a href="/dashboard/tables" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
+            <p className="text-2xl">🪑</p>
+            <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Tables</p>
+            <p className="text-xs text-stone-500">Manage tables & sessions</p>
+          </a>
+          <a href="/dashboard/sales" className="group rounded-2xl border border-stone-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-rasa-300 hover:shadow-lg hover:shadow-rasa-500/10">
+            <p className="text-2xl">💰</p>
+            <p className="mt-2 font-black text-ink group-hover:text-rasa-600">Sales</p>
+            <p className="text-xs text-stone-500">Receipts & daily sales</p>
+          </a>
+        </div>
+      ) : (
+        /* Staff / waiter — their whole job is taking orders at tables. */
+        <div className="rounded-2xl border border-rasa-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-lg font-black text-ink">Take orders 🧾</p>
+              <p className="mt-1 text-sm text-stone-500">
+                {attendance?.on_duty
+                  ? "You're on duty — start serving your tables."
+                  : "Clock in when your shift starts, then start serving your tables."}
+              </p>
+            </div>
+            <a
+              href="/dashboard/pos"
+              className="rounded-xl bg-rasa-600 px-6 py-3 text-sm font-black text-white shadow-lg shadow-rasa-600/25 transition hover:bg-rasa-700"
+            >
+              Open order screen →
+            </a>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            {[
+              { n: "1", t: "Pick a table", d: "Tap the table your customer is at (or Takeaway)." },
+              { n: "2", t: "Add their items", d: "Tap the food & drinks — they land in the order on the right." },
+              { n: "3", t: "Send to kitchen", d: "It goes straight to the kitchen — follow it on the Floor tab." },
+            ].map((s) => (
+              <div key={s.n} className="flex items-start gap-3 rounded-xl border border-stone-200 bg-[#fdf8f6] p-3">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-rasa-500 text-xs font-black text-white">{s.n}</span>
+                <div>
+                  <p className="text-sm font-black text-ink">{s.t}</p>
+                  <p className="text-xs leading-snug text-stone-500">{s.d}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Clock in/out (staff & manager) */}
       {attendance?.requires_attendance && (
@@ -118,7 +155,7 @@ function HomeContent() {
             <p className="font-black text-ink">Today&apos;s attendance</p>
             <p className="text-sm text-stone-500">
               {attendance.on_duty
-                ? "You are on duty — take orders from the POS."
+                ? "You are on duty — take orders from the Order screen."
                 : "Clock in when your shift starts to begin taking orders."}
             </p>
           </div>
@@ -197,7 +234,9 @@ function HomeContent() {
         <div className="rounded-2xl border border-stone-200 bg-white p-6 text-center">
           <p className="text-2xl">🍽️</p>
           <p className="mt-2 font-black text-ink">Your account is ready</p>
-          <p className="text-sm text-stone-500">Ask your owner to add menu items and tables so you can start taking orders.</p>
+          <p className="text-sm text-stone-500">
+            Ask your owner to add menu items and tables so you can start taking orders on the Order screen.
+          </p>
         </div>
       )}
     </>

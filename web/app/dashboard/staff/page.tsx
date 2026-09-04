@@ -8,6 +8,17 @@ import { getToken } from "../../../lib/session";
 const inputCls =
   "w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-sm text-ink outline-none transition focus:border-rasa-500 focus:ring-4 focus:ring-rasa-100";
 
+const POSITIONS = [
+  "Waiter",
+  "Cashier",
+  "Chef",
+  "Kitchen helper",
+  "Bartender",
+  "Host / Hostess",
+  "Runner",
+  "Other",
+];
+
 function StaffContent() {
   const { role } = useDashboard();
   const token = getToken();
@@ -96,11 +107,12 @@ function StaffContent() {
         </button>
       </div>
 
-      <div className="rounded-2xl border border-brand-100 bg-white p-5">
+      <div className="rounded-2xl border border-rasa-100 bg-white p-5">
         <p className="text-sm font-bold text-ink">How staff take orders</p>
         <p className="mt-1 text-sm text-stone-500">
-          Each staff member logs in to app.sajio.my, presses <b>Clock in</b> when their shift starts, then takes orders from the
-          POS. Only on-duty staff can create orders. Managers can too. You (the owner) are always allowed.
+          Each staff member logs in to app.sajio.my, presses <b>Clock in</b> when their shift starts, then opens the{" "}
+          <b>Order</b> screen, picks a table (or Takeaway), adds the food & drinks and sends the order to the kitchen.
+          Only on-duty staff can create orders. Managers can too. You (the owner) are always allowed.
         </p>
       </div>
 
@@ -174,7 +186,14 @@ function StaffContent() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Position</label>
-                  <input value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} className={inputCls} placeholder="Waiter" />
+                  <select value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} className={inputCls}>
+                    <option value="">— Select position —</option>
+                    {POSITIONS.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-black uppercase tracking-wide text-stone-500">Phone</label>

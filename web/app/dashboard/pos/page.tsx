@@ -56,7 +56,6 @@ function PosPageContent() {
   const { role, attendance, clockIn } = useDashboard();
   const token = getToken();
   const canManage = role === "owner" || role === "manager";
-  const staffLabel = role === "manager" ? "Manager" : "Staff";
 
   const [tab, setTab] = useState<"order" | "floor">("order");
   const [type, setType] = useState<"dine_in" | "takeaway">("dine_in");
@@ -169,7 +168,7 @@ function PosPageContent() {
       return;
     }
     if (type === "dine_in" && !tableSel) {
-      flash("Choose table untuk dine-in.", true);
+      flash("Choose a table for dine-in first.", true);
       return;
     }
     if (!onDuty) {
@@ -271,15 +270,20 @@ function PosPageContent() {
       {/* Header + tabs */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-ink">POS 🧾</h1>
+          <h1 className="text-2xl font-black tracking-tight text-ink">{canManage ? "POS 🧾" : "Take order 🧾"}</h1>
           <p className="text-sm text-stone-500">
-            {canManage ? "" : `${staffLabel} · `}
-            {attendance ? (onDuty ? "● On duty" : "○ Not clocked in") : "Restaurant owner"}
+            {canManage
+              ? "Dine-in & takeaway · orders, floor & payments"
+              : attendance
+                ? onDuty
+                  ? "● On duty — pick a table and start taking orders"
+                  : "○ Not clocked in yet"
+                : "Restaurant owner"}
           </p>
         </div>
         <div className="flex rounded-xl border border-stone-200 bg-white p-1">
           <button onClick={() => setTab("order")} className={`rounded-lg px-4 py-2 text-sm font-black transition ${tab === "order" ? "bg-rasa-600 text-white" : "text-stone-500 hover:text-rasa-600"}`}>
-            + Order baru
+            + New order
           </button>
           <button onClick={() => setTab("floor")} className={`rounded-lg px-4 py-2 text-sm font-black transition ${tab === "floor" ? "bg-rasa-600 text-white" : "text-stone-500 hover:text-rasa-600"}`}>
             Floor {openCount > 0 ? `(${openCount})` : ""}
@@ -350,8 +354,17 @@ function PosPageContent() {
                       </button>
                     );
                   })}
-                  {tables.length === 0 && <p className="text-sm text-stone-400">No tables yet — create some on the Tables page first.</p>}
+                  {tables.length === 0 && (
+                    <p className="text-sm text-stone-400">
+                      {canManage
+                        ? "No tables yet — create some on the Tables page first."
+                        : "No tables yet — your owner will set them up on the Tables page."}
+                    </p>
+                  )}
                 </div>
+                {type === "dine_in" && tables.length > 0 && (
+                  <p className="mt-2 text-[11px] font-semibold text-stone-400">Tap a table to select it · <span className="text-rasa-400">●</span> = has an open session (new orders join it)</p>
+                )}
                 {tableSel && (
                   <p className="mt-2 text-xs font-bold text-rasa-600">
                     Table {tableSel.number} selected{sessionForTable.has(tableSel.id) ? " (existing session — orders will be combined)" : ""}
@@ -402,13 +415,25 @@ function PosPageContent() {
                   {!p.available && <p className="text-[10px] font-bold uppercase text-stone-400">Sold out</p>}
                 </button>
               ))}
-              {shownCats.length === 0 && <p className="col-span-full py-8 text-center text-sm text-stone-400">No products yet. Add some to the menu first.</p>}
+              {shownCats.length === 0 && (
+                <p className="col-span-full py-8 text-center text-sm text-stone-400">
+                  {canManage
+                    ? "No products yet. Add some to the menu first."
+                    : "The menu is still empty — your owner will add products in Menu."}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Right: cart */}
           <aside className="h-fit rounded-2xl border border-stone-200 bg-white p-4 xl:sticky xl:top-20">
-            <p className="font-black text-ink">Order {type === "dine_in" ? `— Table ${tableSel?.number ?? "?"}` : "— Takeaway"}</p>
+            <p className="font-black text-ink">
+              {type === "dine_in"
+                ? tableSel
+                  ? `Order — Table ${tableSel.number}`
+                  : "Order — pick a table"
+                : "Order — Takeaway"}
+            </p>
             <div className="mt-3 max-h-72 space-y-2 overflow-auto pr-1">
               {cart.length === 0 && <p className="py-6 text-center text-sm text-stone-400">Click a product to add it to the order.</p>}
               {cart.map((l) => (

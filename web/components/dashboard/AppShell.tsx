@@ -32,13 +32,14 @@ export function useDashboard(): CtxType {
   return c;
 }
 
-const NAV: { key: string; label: string; icon: string; href: string; roles?: Role[] }[] = [
+const NAV: { key: string; label: string; icon: string; href: string; roles?: Role[]; staffLabel?: string }[] = [
   { key: "home", label: "Home", icon: "▦", href: "/dashboard" },
-  { key: "pos", label: "POS", icon: "◧", href: "/dashboard/pos" },
+  // For staff/waiters this reads "Order" (their whole job is taking orders); owners/managers keep "POS".
+  { key: "pos", label: "POS", staffLabel: "Order", icon: "◧", href: "/dashboard/pos" },
   { key: "menu", label: "Menu", icon: "☰", href: "/dashboard/menu", roles: ["owner", "manager"] },
   { key: "tables", label: "Tables", icon: "▤", href: "/dashboard/tables", roles: ["owner", "manager"] },
   { key: "staff", label: "Staff", icon: "☺", href: "/dashboard/staff", roles: ["owner", "manager"] },
-  { key: "sales", label: "Sales", icon: "₨", href: "/dashboard/sales" },
+  { key: "sales", label: "Sales", icon: "₨", href: "/dashboard/sales", roles: ["owner", "manager"] },
 ];
 
 function Logo({ light = false }: { light?: boolean }) {
@@ -144,15 +145,17 @@ export default function AppShell({ active, children }: { active: string; childre
             <nav className="ml-auto flex items-center gap-1 overflow-x-auto rounded-2xl bg-stone-100/80 p-1">
               {nav.map((n) => {
                 const on = active === n.key;
+                const label = n.staffLabel && role === "staff" ? n.staffLabel : n.label;
                 return (
                   <Link
                     key={n.key}
                     href={n.href}
+                    title={n.label}
                     className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-black transition ${
                       on ? "bg-rasa-500 text-white shadow-md shadow-rasa-500/30" : "text-stone-600 hover:bg-white hover:text-rasa-600"
                     }`}
                   >
-                    {n.label}
+                    {label}
                   </Link>
                 );
               })}

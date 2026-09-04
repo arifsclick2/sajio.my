@@ -179,7 +179,7 @@ function MenuPageContent() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-ink">Menu 🍽️</h1>
-          <p className="text-sm text-stone-500">Kategori &amp; produk untuk POS dan QR ordering.</p>
+          <p className="text-sm text-stone-500">Categories & products used by POS and QR ordering.</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setCatModal({ name: "", description: "" })} className="rounded-xl border border-stone-300 bg-white px-4 py-2 text-sm font-black text-stone-700 transition hover:border-rasa-300 hover:text-rasa-600">
