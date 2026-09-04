@@ -77,6 +77,41 @@ class Restaurant extends Model
         return $this->hasMany(Attendance::class);
     }
 
+    public function settings(): HasOne
+    {
+        return $this->hasOne(RestaurantSetting::class);
+    }
+
+    public function branding(): HasOne
+    {
+        return $this->hasOne(RestaurantBranding::class);
+    }
+
+    public function categories(): HasMany
+    {
+        return $this->hasMany(Category::class);
+    }
+
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    public function tables(): HasMany
+    {
+        return $this->hasMany(RestaurantTable::class);
+    }
+
+    public function tableTags(): HasMany
+    {
+        return $this->hasMany(TableTag::class);
+    }
+
+    public function tableSessions(): HasMany
+    {
+        return $this->hasMany(TableSession::class);
+    }
+
     public function activeSubscription(): HasOne
     {
         return $this->hasOne(Subscription::class)
