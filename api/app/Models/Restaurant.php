@@ -21,6 +21,9 @@ use Laravel\Cashier\Billable;
     'country',
     'status',
     'trial_ends_at',
+    'trial_reminders_sent',
+    'trial_locked_at',
+    'trial_expired_email_sent_at',
     'stripe_id',
     'pm_type',
     'pm_last_four',
@@ -34,6 +37,9 @@ class Restaurant extends Model
         return [
             'status' => RestaurantStatus::class,
             'trial_ends_at' => 'datetime',
+            'trial_reminders_sent' => 'array',
+            'trial_locked_at' => 'datetime',
+            'trial_expired_email_sent_at' => 'datetime',
         ];
     }
 
