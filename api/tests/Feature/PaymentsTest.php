@@ -320,4 +320,47 @@ class PaymentsTest extends TestCase
         $this->postJson("/api/v1/sessions/{$sessionId}/close", ['method' => 'cash'])
             ->assertForbidden();
     }
+
+    /* ------------------------------------------------------------------ */
+    /*  Sales history (GET /payments)                                      */
+    /* ------------------------------------------------------------------ */
+
+    public function test_payment_history_lists_and_sums_records(): void
+    {
+        $r = $this->restaurant();
+        $p1 = $this->addProduct($r, 'Nasi Lemak', 12.5);
+        $p2 = $this->addProduct($r, 'Teh Tarik', 2.5);
+        $owner = User::factory()->restaurant($r)->owner()->create();
+        Sanctum::actingAs($owner);
+
+        $o1 = $this->takeaway($r, $p1, 2); // 25.00
+        $o2 = $this->takeaway($r, $p2, 2); // 5.00
+        $this->postJson("/api/v1/orders/{$o1['id']}/pay", ['method' => 'cash'])->assertCreated();
+        $this->postJson("/api/v1/orders/{$o2['id']}/pay", ['method' => 'qr'])->assertCreated();
+
+        $today = now()->format('Y-m-d');
+
+        $this->getJson('/api/v1/payments')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('summary.count', 2)
+            ->assertJsonPath('summary.total_amount', '30.00');
+
+        // Per-method filter + breakdown.
+        $this->getJson('/api/v1/payments?method=cash')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('summary.total_amount', '25.00')
+            ->assertJsonPath('summary.by_method.0.method', 'cash');
+
+        // Date filter matches paid_at (today).
+        $this->getJson('/api/v1/payments?date='.$today)
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+
+        // Tenant isolation.
+        $r2 = $this->restaurant();
+        Sanctum::actingAs(User::factory()->restaurant($r2)->owner()->create());
+        $this->getJson('/api/v1/payments')->assertOk()->assertJsonCount(0, 'data');
+    }
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\ReceiptController;
 use App\Http\Controllers\Api\V1\RestaurantTableController;
 use App\Http\Controllers\Api\V1\TableSessionController;
 use App\Http\Controllers\Api\V1\TableTagController;
@@ -79,6 +80,11 @@ Route::prefix('v1')->group(function (): void {
 
         // Payments (§17, record-only) — all restaurant roles
         Route::post('/orders/{order}/pay', [PaymentController::class, 'payOrder']);
+        Route::get('/payments', [PaymentController::class, 'index']);
+
+        // Receipts (§22 browser print) — all restaurant roles
+        Route::get('/orders/{order}/receipt', [ReceiptController::class, 'orderReceipt']);
+        Route::get('/sessions/{session}/receipt', [ReceiptController::class, 'sessionReceipt']);
 
         // Menu + Tables (owner/manager)
         Route::middleware('role:owner,manager')->group(function (): void {
